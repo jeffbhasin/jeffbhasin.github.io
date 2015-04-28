@@ -1,0 +1,12 @@
+# Site settings
+title: "Epigenomics Tools by Jeff Bhasin, et al."
+email: jeffb@case.edu
+description: > # this means to ignore newlines until "baseurl:"
+  R Packages by Bhasin, et al. for Detecting and Interpreting Epigenomic Changes Relevant to Disease and Development
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://jeffbhasin.github.io" # the base hostname & protocol for your site
+github_username:  jeffbhasin
+
+# Build settings
+markdown: kramdown
+exclude: [goldmine_howto, methylaction_howto]
