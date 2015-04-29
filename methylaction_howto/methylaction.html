@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Jeff Bhasin" />
+
+<meta name="date" content="2015-04-28" />
+
+<title>Methylaction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</title>
+
+<script src="methylaction_files/jquery-1.11.0/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="methylaction_files/bootstrap-3.3.1/css/bootstrap.min.css" rel="stylesheet" />
+<script src="methylaction_files/bootstrap-3.3.1/js/bootstrap.min.js"></script>
+<script src="methylaction_files/bootstrap-3.3.1/shim/html5shiv.min.js"></script>
+<script src="methylaction_files/bootstrap-3.3.1/shim/respond.min.js"></script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img { 
+  max-width:100%; 
+  height: auto; 
+}
+</style>
+<div class="container-fluid main-container">
+
+
+<div id="header">
+<h1 class="title">Methylaction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</h1>
+<h4 class="author"><em>Jeff Bhasin</em></h4>
+<h4 class="date"><em>2015-04-28</em></h4>
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#purpose">Purpose</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#example-data">Example Data</a></li>
+<li><a href="#preprocessing">Preprocessing</a><ul>
+<li><a href="#describing-the-experimental-design">Describing the Experimental Design</a></li>
+<li><a href="#loading-reads-and-generating-count-tables">Loading Reads and Generating Count Tables</a></li>
+</ul></li>
+<li><a href="#differentially-methylated-region-dmr-detection">Differentially Methylated Region (DMR) Detection</a><ul>
+<li><a href="#interpreting-the-results">Interpreting the results</a></li>
+</ul></li>
+<li><a href="#vizualization-of-dmrs">Vizualization of DMRs</a></li>
+<li><a href="#permutation-and-bootstrap-testing">Permutation and Bootstrap Testing</a></li>
+</ul>
+</div>
+
+<div id="purpose" class="section level1">
+<h1>Purpose</h1>
+<p>This how-to will demonstrate the use of Methylaction to detect differentially methylated regions (DMRs) among three groups using data from MBD-isolated Genome Sequencing (MiGS). While Methylaction is designed for genome-wide analysis, this example data is only for a subset of the genome and a subset of samples so the example can be worked through quickly. Please refer to the function documentation for advanced options.</p>
+</div>
+<div id="prerequisites" class="section level1">
+<h1>Prerequisites</h1>
+<ul>
+<li>R Installed (download from <a href="http://cran.r-project.org/" class="uri">http://cran.r-project.org/</a>)</li>
+<li>A linux server or workstation</li>
+</ul>
+<p>RAM and CPU requirements will depend on the depth of the sequencing and the number of samples/groups. We recommend very high performance machines. As a reference, we used a linux server with 20 cores of 2.80GHz CPUs and 64GB of RAM for the whole genome analysis of 22 samples across 3 groups. A high performance computing cluster (HPC) was used to obtain 1,000s of permutations.</p>
+<p>For the purposes of the example, less CPU and RAM are required.</p>
+</div>
+<div id="installation" class="section level1">
+<h1>Installation</h1>
+<p>First, start R and install pre-requisite packages from <a href="http://www.bioconductor.org">Bioconductor</a>:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
+<span class="kw">biocLite</span>(<span class="kw">c</span>(<span class="st">&quot;GenomicRanges&quot;</span>,<span class="st">&quot;IRanges&quot;</span>,<span class="st">&quot;devtools&quot;</span>,<span class="st">&quot;DESeq&quot;</span>,<span class="st">&quot;GenomicAlignments&quot;</span>,<span class="st">&quot;Repitools&quot;</span>,<span class="st">&quot;Rsubread&quot;</span>,<span class="st">&quot;ggbio&quot;</span>))</code></pre>
+<p>Then, install both Goldmine and Methylaction from GitHub. Be sure to accept installation of any additional pre-requisite packages from CRAN.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(devtools)
+<span class="kw">install_github</span>(<span class="st">&quot;jeffbhasin/goldmine&quot;</span>)
+<span class="kw">install_github</span>(<span class="st">&quot;jeffbhasin/methylaction&quot;</span>)</code></pre>
+</div>
+<div id="example-data" class="section level1">
+<h1>Example Data</h1>
+<p>Please obtain the “methylaction_demo.zip” file and extract it. This contains all the example input data needed to complete this how-to.</p>
+</div>
+<div id="preprocessing" class="section level1">
+<h1>Preprocessing</h1>
+<p>First, load the methylaction R package into a new session of R.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(methylaction)</code></pre>
+<div id="describing-the-experimental-design" class="section level2">
+<h2>Describing the Experimental Design</h2>
+<p>Unique sample identifiers, BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see “input/samples.csv” for an example of the format. Note that groups must be ordered in the order you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this order is the order the groups are encountered in the sample CSV file. Optionally, a column called “color” can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.</p>
+<p>The sample CSV file can be read into R using the readSampleInfo() command:</p>
+<pre class="sourceCode r"><code class="sourceCode r">samp &lt;-<span class="st"> </span><span class="kw">readSampleInfo</span>(<span class="st">&quot;input/samples.csv&quot;</span>)</code></pre>
+<p>The command will output confirmation of group sample sizes and group order.</p>
+</div>
+<div id="loading-reads-and-generating-count-tables" class="section level2">
+<h2>Loading Reads and Generating Count Tables</h2>
+<p>To save time, all read alignments are read from the BAM files into an RData workspace that is saved to disk, and this prevents you from having to re-read this data from BAM any time you want to re-run methylaction. The getReads() function does this. The initial stage of the program works with read counts in 50bp windows, which can also be computed once, and do not have to be re-run for any re-run of the methylaction() command. The getCounts() function does this.</p>
+<p>There are two other variables specific to the experiment that will be needed in the next step. These are the window size (we recommend 50bp) and the fragment size which was selected for in your sequencing protocol. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study.</p>
+<p>We recommend saving all of the above into a single preprocessing RData, which can be loaded prior to running the DMR detection step described next.</p>
+<p>First, define some variables that will be needed for the preprocessing functions (change to suit your experiment, especially fragsize which is the fragment length selected for during sequencing library preparation):</p>
+<pre class="sourceCode r"><code class="sourceCode r">chrs &lt;-<span class="st"> &quot;chr22&quot;</span>
+fragsize &lt;-<span class="st"> </span><span class="dv">120</span>
+winsize &lt;-<span class="st"> </span><span class="dv">50</span>
+ncore &lt;-<span class="st"> </span><span class="dv">1</span>
+bsgenome &lt;-<span class="st"> </span>Hsapiens</code></pre>
+<p>Then, read in alignments and generate binned count tables (these steps may be memory, disk, and CPU intensive):</p>
+<pre class="sourceCode r"><code class="sourceCode r">reads &lt;-<span class="st"> </span><span class="kw">getReads</span>(<span class="dt">samp=</span>samp, <span class="dt">chrs=</span>chrs, <span class="dt">fragsize=</span>fragsize, <span class="dt">ncore=</span>ncore)
+counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span class="dt">samp=</span>samp, <span class="dt">reads=</span>reads, <span class="dt">chrs=</span>chrs, <span class="dt">winsize=</span>winsize, <span class="dt">ncore=</span>ncore)</code></pre>
+<p>Finally, save all of the above to an RData file:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">save</span>(samp, reads, counts, winsize, fragsize, chrs, <span class="dt">file=</span><span class="st">&quot;output/prepro.rd&quot;</span>,<span class="dt">compress=</span>T)</code></pre>
+<p>For future runs of DMR detection, the saved RData can be loaded rather than spending time re-preprocessing the data.</p>
+</div>
+</div>
+<div id="differentially-methylated-region-dmr-detection" class="section level1">
+<h1>Differentially Methylated Region (DMR) Detection</h1>
+<p>With all the preprocessing completed, differentially methylated regions (DMRs) can be detected using a call to the methylaction() function. There are many options to this function that will affect the DMR detection. Here we have used recommended defaults. See the function documentation for more details. This function performs multiple steps, which are both CPU, RAM, and disk intensive when run on larger data sets.</p>
+<p>First, set the number of cores to use based on your hardware (we recommend reducing this number if there are memory issues):</p>
+<pre class="sourceCode r"><code class="sourceCode r">ncore &lt;-<span class="st"> </span><span class="dv">1</span></code></pre>
+<p>Then, run methylaction() to call DMRs:</p>
+<pre class="sourceCode r"><code class="sourceCode r">ma &lt;-<span class="st"> </span><span class="kw">methylaction</span>(<span class="dt">samp=</span>samp, <span class="dt">counts=</span>counts, <span class="dt">reads=</span>reads, <span class="dt">winsize=</span>winsize, <span class="dt">ncore=</span>ncore)</code></pre>
+<p>Finally, save the results object to disk:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">save</span>(ma,<span class="dt">file=</span><span class="st">&quot;output/ma.rd&quot;</span>, <span class="dt">compress=</span>T)</code></pre>
+<div id="interpreting-the-results" class="section level2">
+<h2>Interpreting the results</h2>
+<p>The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups (see table for clarification). To see what options the list was created using, see the ma$args object. If you want to access data from any internal steps of the function, see the objects nested under ma$data.</p>
+</div>
+</div>
+<div id="vizualization-of-dmrs" class="section level1">
+<h1>Vizualization of DMRs</h1>
+<p>DMRs can be visualized genome-wide via a heatmap or karyogram.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maHeatmap</span>(ma,<span class="dt">file=</span><span class="st">&quot;heat.png&quot;</span>)
+<span class="kw">maKaryogram</span>(ma,<span class="dt">file=</span><span class="st">&quot;karyo.png&quot;</span>)</code></pre>
+</div>
+<div id="permutation-and-bootstrap-testing" class="section level1">
+<h1>Permutation and Bootstrap Testing</h1>
+<p>Because of the two stage testing approach, type I error rates are inflated with this method. To determine if this level is acceptable, we have implemented a permutation approach. This establishes a FDR for each pattern of DMR between each group. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs cut at this p-value can be used as the definitive list for the study.</p>
+<p>Bootstraps can be enabled by adding the “nperms” option to methylaction(). The resulting output list will then have an “fdr” object that reports false discovery rates (FDRs).</p>
+<pre class="sourceCode r"><code class="sourceCode r">ma &lt;-<span class="st"> </span><span class="kw">methylaction</span>(<span class="dt">samp=</span>samp, <span class="dt">counts=</span>counts, <span class="dt">reads=</span>reads, <span class="dt">winsize=</span>winsize, <span class="dt">perm.boot=</span>T, <span class="dt">nperms=</span><span class="dv">3</span>, <span class="dt">ncore=</span>ncore)</code></pre>
+<p>If “perm.boot” is set to be FALSE, then regular permutations (sampling without replacement) are performed rather than bootstrapping (sampling with replacement).</p>
+<p>See the maPerm(), maPermMerge(), and maPermFdr() for manual methods to run permutations. These are useful for spreading permutations across multiple machines or in a high performance computing (HPC) environment.</p>
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

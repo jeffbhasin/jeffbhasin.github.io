@@ -9,4 +9,4 @@ github_username:  jeffbhasin
 
 # Build settings
 markdown: kramdown
-exclude: [goldmine_howto, methylaction_howto]
+exclude: [methylaction_howto,goldmine_howto]
