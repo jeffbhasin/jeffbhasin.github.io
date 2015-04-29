@@ -2,7 +2,7 @@
 layout: default
 title: "Goldmine: How-To"
 ---
-<div class="container">
+
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
@@ -52,7 +52,7 @@ img {
 <div id="header">
 <h1 class="title">Goldmine: Integrating information to place epigenome-wide results into biological contexts</h1>
 <h4 class="author"><em>Jeff Bhasin</em></h4>
-<h4 class="date"><em>2015-04-28</em></h4>
+<h4 class="date"><em>2015-04-29</em></h4>
 </div>
 
 <div id="TOC">
@@ -88,6 +88,7 @@ img {
 <p>First, start R and install pre-requisite packages from <a href="http://www.bioconductor.org">Bioconductor</a>:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
 <span class="kw">biocLite</span>(<span class="kw">c</span>(<span class="st">&quot;GenomicRanges&quot;</span>,<span class="st">&quot;IRanges&quot;</span>,<span class="st">&quot;devtools&quot;</span>))</code></pre>
+<p>For Windows users only, ensure that Rtools has been installed. This requires an additional installation. Please see <a href="http://cran.r-project.org/bin/windows/Rtools/" class="uri">http://cran.r-project.org/bin/windows/Rtools/</a> to install Rtools for Windows.</p>
 <p>Then, install Goldmine from GitHub. Be sure to accept installation of any additional pre-requisite packages from CRAN.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(devtools)
 <span class="kw">install_github</span>(<span class="st">&quot;jeffbhasin/goldmine&quot;</span>)</code></pre>
@@ -295,4 +296,3 @@ $(document).ready(function () {
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>
-</div>

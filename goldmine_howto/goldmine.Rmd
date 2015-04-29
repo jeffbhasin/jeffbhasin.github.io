@@ -4,13 +4,13 @@ title: 'Goldmine: Integrating information to place epigenome-wide results into b
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
-  word_document: default
-  pdf_document:
-    toc: yes
   html_document:
     highlight: tango
     self_contained: no
     toc: yes
+  pdf_document:
+    toc: yes
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -31,6 +31,8 @@ First, start R and install pre-requisite packages from [Bioconductor](http://www
 source("http://bioconductor.org/biocLite.R")
 biocLite(c("GenomicRanges","IRanges","devtools"))
 ```
+
+For Windows users only, ensure that Rtools has been installed. This requires an additional installation. Please see http://cran.r-project.org/bin/windows/Rtools/ to install Rtools for Windows.
 
 Then, install Goldmine from GitHub. Be sure to accept installation of any additional pre-requisite packages from CRAN.
 ```{r, eval=FALSE}
