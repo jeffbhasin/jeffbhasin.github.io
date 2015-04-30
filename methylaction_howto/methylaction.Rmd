@@ -4,17 +4,21 @@ title: 'Methylaction: Detecting differentially methylated regions (DMRs) that di
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
-  word_document: default
-  pdf_document:
-    toc: yes
   html_document:
     highlight: tango
-    self_contained: no
     toc: yes
+  pdf_document:
+    toc: yes
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_knit$set(root.dir = "/Users/bhasinj/Documents/methylaction_demo")
+#setwd("/Users/bhasinj/Documents/methylaction_demo")
+library(methylaction)
+load("/Users/bhasinj/Documents/methylaction_demo/output/prepro.rd")
+load("/Users/bhasinj/Documents/methylaction_demo/output/ma.rd")
 ```
 
 # Purpose
@@ -22,14 +26,14 @@ This how-to will demonstrate the use of Methylaction to detect differentially me
 
 # Prerequisites
 * R Installed (download from http://cran.r-project.org/)
-* A linux server or workstation
+* A linux/unix-based server or workstation (includes Mac OS X)
 
-RAM and CPU requirements will depend on the depth of the sequencing and the number of samples/groups. We recommend very high performance machines. As a reference, we used a linux server with 20 cores of 2.80GHz CPUs and 64GB of RAM for the whole genome analysis of 22 samples across 3 groups. A high performance computing cluster (HPC) was used to obtain 1,000s of permutations.
+RAM and CPU requirements will depend on the depth of the sequencing and the number of samples and groups. We recommend very high performance machines. As a reference, we used a linux server with 20 cores of 2.80GHz CPUs and 64GB of RAM for a genome-wide analysis of 22 samples across 3 groups. A high performance computing cluster (HPC) was used to obtain 1,000s of permutations.
 
-For the purposes of the example, less CPU and RAM are required.
+For the purposes of the example, less CPU and RAM are required. This how-to has been tested on a MacBook Pro with a 2.4 GHz CPU and 8 GB of RAM.
 
 # Installation
-First, start R and install pre-requisite packages from [Bioconductor](http://www.bioconductor.org):
+First, start R (by typing the "R" command at the linux command line) and install pre-requisite packages from [Bioconductor](http://www.bioconductor.org):
 
 ```{r,eval=FALSE}
 source("http://bioconductor.org/biocLite.R")
@@ -43,49 +47,57 @@ install_github("jeffbhasin/goldmine")
 install_github("jeffbhasin/methylaction")
 ```
 
-# Example Data
-Please obtain the "methylaction_demo.zip" file and extract it. This contains all the example input data needed to complete this how-to.
+# Obtaining the Example Data
+Please obtain the "methylaction_demo.tar.gz" file and extract it. This contains all the example input data needed to complete this how-to.
+
+From the linux command line, use the command "tar -zxvf methylaction_demo.tar.gz" for extraction.
+
+Note that your session of R must have the working directory set to the location of the "methylaction_demo" folder extracted from the tar.gz file so paths to files in this how-to will be valid. Use the "setwd()" function to set this directory.
+
+For example (change to your location):
+```{r,eval=FALSE}
+setwd("/Users/bhasinj/Documents/methylaction_demo")
+```
 
 # Preprocessing
-First, load the methylaction R package into a new session of R.
-```{r, eval=FALSE}
+First, start R, and load the methylaction R package into the session.
+```{r}
 library(methylaction)
 ```
 
 ## Describing the Experimental Design
-Unique sample identifiers, BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see "input/samples.csv" for an example of the format. Note that groups must be ordered in the order you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this order is the order the groups are encountered in the sample CSV file. Optionally, a column called "color" can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.
+Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see "input/samples.csv" for an example of the format. Note that groups must be ordered in the order you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this order is the order the groups are encountered in the sample CSV file. Optionally, a column called "color" can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.
 
 The sample CSV file can be read into R using the readSampleInfo() command:
-```{r, eval=FALSE}
+```{r}
 samp <- readSampleInfo("input/samples.csv")
+print(samp)
 ```
 The command will output confirmation of group sample sizes and group order.
 
 ## Loading Reads and Generating Count Tables
-To save time, all read alignments are read from the BAM files into an RData workspace that is saved to disk, and this prevents you from having to re-read this data from BAM any time you want to re-run methylaction. The getReads() function does this. The initial stage of the program works with read counts in 50bp windows, which can also be computed once, and do not have to be re-run for any re-run of the methylaction() command. The getCounts() function does this.
+All read alignments are read and processed from the BAM files into an RData workspace that is saved to disk, and this prevents the user from having to re-process data again for each run of Methylaction. The getReads() function obtains the coordinates of the read alignments from the BAM file. The initial stage of the program works with fragment counts in 50bp windows, which are also computed once and saved by the function getCounts().
 
-There are two other variables specific to the experiment that will be needed in the next step. These are the window size (we recommend 50bp) and the fragment size which was selected for in your sequencing protocol. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study.
+There are two other variables specific to the experiment that are needed in the next step. These are the window size (we recommend 50bp) and the fragment size which was selected for in your sequencing protocol. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study. In the case of paired end data, the fragsize variable can be set to "paired" and valid mate pairs will be used.
 
-We recommend saving all of the above into a single preprocessing RData, which can be loaded prior to running the DMR detection step described next.
+First, define the variables that will be needed for the preprocessing functions:
 
-First, define some variables that will be needed for the preprocessing functions (change to suit your experiment, especially fragsize which is the fragment length selected for during sequencing library preparation):
-
-```{r, eval=FALSE}
+```{r}
 chrs <- "chr22"
 fragsize <- 120
 winsize <- 50
 ncore <- 1
-bsgenome <- Hsapiens
 ```
 
 Then, read in alignments and generate binned count tables (these steps may be memory, disk, and CPU intensive):
 
-```{r, eval=FALSE}
+```{r,warning=FALSE,message=FALSE,error=FALSE,eval=FALSE}
 reads <- getReads(samp=samp, chrs=chrs, fragsize=fragsize, ncore=ncore)
 counts <- getCounts(samp=samp, reads=reads, chrs=chrs, winsize=winsize, ncore=ncore)
 ```
 
-Finally, save all of the above to an RData file:
+We recommend saving all of the above into a single preprocessing RData, which can be loaded prior to running the DMR detection step described next.
+
 ```{r, eval=FALSE}
 save(samp, reads, counts, winsize, fragsize, chrs, file="output/prepro.rd",compress=T)
 ```
@@ -93,16 +105,16 @@ save(samp, reads, counts, winsize, fragsize, chrs, file="output/prepro.rd",compr
 For future runs of DMR detection, the saved RData can be loaded rather than spending time re-preprocessing the data.
 
 # Differentially Methylated Region (DMR) Detection
-With all the preprocessing completed, differentially methylated regions (DMRs) can be detected using a call to the methylaction() function. There are many options to this function that will affect the DMR detection. Here we have used recommended defaults. See the function documentation for more details. This function performs multiple steps, which are both CPU, RAM, and disk intensive when run on larger data sets.
+With all the preprocessing completed, differentially methylated regions (DMRs) can be detected using a call to the methylaction() function. There are many options to this function that will affect the DMR detection. Here we have used recommended defaults. See the function documentation for more details. This function performs multiple steps, which are all CPU, RAM, and disk intensive when run on larger data sets.
 
 First, set the number of cores to use based on your hardware (we recommend reducing this number if there are memory issues):
-```{r, eval=FALSE}
+```{r}
 ncore <- 1
 ```
 
 Then, run methylaction() to call DMRs:
-```{r, eval=FALSE}
-ma <- methylaction(samp=samp, counts=counts, reads=reads, winsize=winsize, ncore=ncore)
+```{r,warning=FALSE,message=FALSE,error=FALSE,eval=FALSE}
+ma <- methylaction(samp=samp, counts=counts, reads=reads, ncore=ncore)
 ```
 
 Finally, save the results object to disk:
@@ -110,22 +122,63 @@ Finally, save the results object to disk:
 save(ma,file="output/ma.rd", compress=T)
 ```
 
+It is also useful to save a DMR list as a CSV file for viewing in a spreadsheet application.
+```{r, eval=FALSE}
+write.csv(makeDT(ma$dmr), row.names=FALSE, file="dmrs.csv")
+```
+
 ## Interpreting the results
-The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma\$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups (see table for clarification). To see what options the list was created using, see the ma\$args object. If you want to access data from any internal steps of the function, see the objects nested under ma$data.
+The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma\$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups. All groups with the digit is 1 are hypermethylated with respect to all groups with the digit 0. To see what options the list was created using, see the ma\$args object. If you want to access data from any internal steps of the function, see the objects nested under ma\$data.
+
+The maSummary() function provides details about the intermediate stages of the method.
+```{r}
+maSummary(ma)
+```
+
+The built in function table() can be used to obtain counts of DMRs by pattern and "frequent" classification.
+```{r,eval=FALSE}
+table(ma$dmr$pattern,ma$dmr$frequent)
+```
+
+```{r,echo=FALSE}
+knitr::kable(table(ma$dmr$pattern,ma$dmr$frequent))
+```
 
 # Vizualization of DMRs
 DMRs can be visualized genome-wide via a heatmap or karyogram.
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=9,fig.width=7}
+maHeatmap(ma)
+```
+
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=2, fig.width=6}
+maKaryogram(ma=ma, reads=reads)
+```
+
+In this case, the Karyogram only spans chr22 due to the subset of data for this example.
+
+It is also useful to view DMRs and the windowed sequencing read counts in a genome browser, such as the UCSC genome browser. The maBed() and maTracks() functions can create BED files suitable for uploading as custom tracks to http://genome.ucsc.edu/.
 ```{r, eval=FALSE}
-maHeatmap(ma,file="heat.png")
-maKaryogram(ma,file="karyo.png")
+maBed(ma,file="dmrs.bed")
+maTracks(ma=ma, reads=reads, path="beds")
 ```
 
 # Permutation and Bootstrap Testing
-Because of the two stage testing approach, type I error rates are inflated with this method. To determine if this level is acceptable, we have implemented a permutation approach. This establishes a FDR for each pattern of DMR between each group. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs cut at this p-value can be used as the definitive list for the study.
+Because of the two stage testing approach, type I error rates may be inflated with this method. To determine if this level is acceptable, we have implemented permutation and bootstrapping approaches. This establishes a false discovery rate (FDR) for each pattern of DMR among the groups. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs cut at this p-value can be used as the definitive list for the study.
 
-Bootstraps can be enabled by adding the "nperms" option to methylaction(). The resulting output list will then have an "fdr" object that reports false discovery rates (FDRs).
+Bootstraps can be enabled by adding the "nperms" and "perm.boot" options to methylaction(). The resulting output list will then have an "fdr" object that reports false discovery rates (FDRs).
 ```{r, eval=FALSE}
-ma <- methylaction(samp=samp, counts=counts, reads=reads, winsize=winsize, perm.boot=T, nperms=3, ncore=ncore)
+ma <- methylaction(samp=samp, counts=counts, reads=reads, perm.boot=T, nperms=3, ncore=ncore)
+```
+```{r, eval=FALSE}
+print(ma$fdr)
+```
+```{r, eval=TRUE,echo=FALSE}
+knitr::kable(ma$fdr,digits=2)
+```
+
+Finally, save the results object to disk:
+```{r, eval=FALSE}
+save(ma,file="output/ma.rd", compress=T)
 ```
 
 If "perm.boot" is set to be FALSE, then regular permutations (sampling without replacement) are performed rather than bootstrapping (sampling with replacement).
