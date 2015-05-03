@@ -31,6 +31,7 @@ code > span.er { font-weight: bold; }
 </style>
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -52,7 +53,7 @@ img {
 <div id="header">
 <h1 class="title">Goldmine: Integrating information to place epigenome-wide results into biological contexts</h1>
 <h4 class="author"><em>Jeff Bhasin</em></h4>
-<h4 class="date"><em>2015-04-29</em></h4>
+<h4 class="date"><em>2015-05-02</em></h4>
 </div>
 
 <div id="TOC">
@@ -68,19 +69,22 @@ img {
 <li><a href="#matched-null-set">Matched Null Set</a></li>
 <li><a href="#test-for-enrichment">Test for Enrichment</a></li>
 </ul></li>
-<li><a href="#appendix-direct-import-of-ucsc-genome-browser-tables">Appendix: Direct Import of UCSC Genome Browser Tables</a></li>
+<li><a href="#appendix">Appendix</a><ul>
+<li><a href="#direct-import-of-ucsc-genome-browser-tables">Direct Import of UCSC Genome Browser Tables</a></li>
+<li><a href="#reproducible-annotation">Reproducible Annotation</a></li>
+</ul></li>
 </ul>
 </div>
 
 <div id="purpose" class="section level1">
 <h1>Purpose</h1>
-<p>This how-to will demonstrate the use of Goldmine to analyze a set of example genomic ranges in order to introduce you to the main functions of the package. These ranges can be substituted by for any ranges of interest. Please refer to the function documentation for advanced options.</p>
+<p>This how-to will demonstrate the use of Goldmine to analyze a set of example genomic ranges in order to introduce you to the main functions of the package. These ranges can be substituted for any ranges of interest. Please refer to the function documentation for advanced options.</p>
 </div>
 <div id="prerequisites" class="section level1">
 <h1>Prerequisites</h1>
 <ul>
 <li>R Installed (download from <a href="http://cran.r-project.org/" class="uri">http://cran.r-project.org/</a>)</li>
-<li>For large sets of ranges (1,000+) and for optimal performance, we recommend using Goldmine on a linux server with at least 10GB of RAM. However, it will function on desktop computers for smaller sets of ranges.</li>
+<li>For large sets of ranges and for optimal performance, we recommend using Goldmine on a linux server with at least 8GB of RAM. However, it will function on desktop computers for smaller sets of ranges.</li>
 </ul>
 </div>
 <div id="installation" class="section level1">
@@ -88,7 +92,6 @@ img {
 <p>First, start R and install pre-requisite packages from <a href="http://www.bioconductor.org">Bioconductor</a>:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
 <span class="kw">biocLite</span>(<span class="kw">c</span>(<span class="st">&quot;GenomicRanges&quot;</span>,<span class="st">&quot;IRanges&quot;</span>,<span class="st">&quot;devtools&quot;</span>))</code></pre>
-<p>For Windows users only, ensure that Rtools has been installed. This requires an additional installation. Please see <a href="http://cran.r-project.org/bin/windows/Rtools/" class="uri">http://cran.r-project.org/bin/windows/Rtools/</a> to install Rtools for Windows.</p>
 <p>Then, install Goldmine from GitHub. Be sure to accept installation of any additional pre-requisite packages from CRAN.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(devtools)
 <span class="kw">install_github</span>(<span class="st">&quot;jeffbhasin/goldmine&quot;</span>)</code></pre>
@@ -106,173 +109,100 @@ img {
 query &lt;-<span class="st"> </span><span class="kw">read.csv</span>(csvpath)</code></pre>
 <p>If you are providing your own set of ranges, be sure the data contains the columns “chr”, “start”, and “end” which represent chromosome name, start coordinate (1-based), and end coordinate, respectively.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">head</span>(query)</code></pre>
-<pre><code>##   dmrid  chr   start     end width anodev.padj pattern
-## 1     7 chr1  798951  799200   250  0.03702325      10
-## 2    16 chr1 1436051 1436300   250  0.02080976      10
-## 3    17 chr1 1492951 1493350   400  0.01695162      10
-## 4    18 chr1 1495301 1495650   350  0.03425287      10
-## 5    19 chr1 1501401 1501850   450  0.02956278      10
-## 6    20 chr1 1505801 1505950   150  0.02445114      10</code></pre>
 </div>
 <div id="annotation-of-genomic-ranges" class="section level1">
 <h1>Annotation of Genomic Ranges</h1>
-<p>Both summary and detailed annotations are produced by the goldmine() function. The data source for the gene and feature sets is the table archive of the UCSC Genome Browser. The first time a table is needed, Goldmine will download and cache the table. On subsequent calls to goldmine(), and other functions that access UCSC Genome Browser tables, the data will only be re-downloaded if there has been an update to the table. It is the user’s responsibility to ensure their use of this external resource meets UCSC’s <a href="http://genome.ucsc.edu/conditions.html">Conditions of Use</a>.</p>
+<p>Both summary (“wide” format) and detailed (“long” format) annotations are produced by the goldmine() function. The data source for the gene and feature sets is the table archive of the UCSC Genome Browser. The first time a table is needed, Goldmine will download and cache the table. On subsequent calls to goldmine(), and other functions that access UCSC Genome Browser tables, the data will only be re-downloaded if there has been an update to the table on UCSC’s server. It is the user’s responsibility to ensure their use of this external resource meets UCSC’s <a href="http://genome.ucsc.edu/conditions.html">Conditions of Use</a>.</p>
 <p>To enable UCSC table caching, please choose a cache directory. This is a folder on your computer that Goldmine will use to download and cache the reference data used for the annotations. For the purposes of this example, we will use a folder called “gbcache” in the current working directory. Please set the value of the cachedir variable to point to your cache directory of choice.</p>
 <pre class="sourceCode r"><code class="sourceCode r">cachedir &lt;-<span class="st"> &quot;gbcache&quot;</span></code></pre>
 <p>Goldmine supports all of the assembled genomes on the UCSC Genome Browser that have either UCSC (knownGene), RefSeq (refGene), or ENSEMBL (ensGene) gene annotation tables available. In the case of the DMR data, the genomic coordinates are with respect to the hg19 build of the human genome. If using your own ranges, please set the genome variable to match the UCSC assembly name of the correct genome (e.g. “mm10”, “mm9”, “hg18”, etc).</p>
 <pre class="sourceCode r"><code class="sourceCode r">genome &lt;-<span class="st"> &quot;hg19&quot;</span></code></pre>
-<p>For speed of the example, we will subset to the first 1,000 DMRs only. Feel free to skip this if you are on a powerful computer.</p>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nrow</span>(query)</code></pre>
-<pre><code>## [1] 19463</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r">query &lt;-<span class="st"> </span>query[<span class="dv">1</span>:<span class="dv">100</span>,]
+<p>For speed of the example, you can subset to the first 100 DMRs only. Feel free to skip this if you are on a powerful computer. We recommend using the full set of DMRs if possible for the section on enrichment analysis in order to produce meaningful genome-wide results.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nrow</span>(query)
+query &lt;-<span class="st"> </span>query[<span class="dv">1</span>:<span class="dv">100</span>,]
 <span class="kw">nrow</span>(query)</code></pre>
-<pre><code>## [1] 100</code></pre>
 <p>With these two variables set, the goldmine() function can now be run. If this is your first run or first time using a cache directory, it may take a few minutes to download the reference genome browser tables.</p>
 <pre class="sourceCode r"><code class="sourceCode r">gm &lt;-<span class="st"> </span><span class="kw">goldmine</span>(<span class="dt">query=</span>query,<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)</code></pre>
 <p>The output object (in this case we called it “gm”) is an R list with multiple elements. Let’s look at each one individually.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(gm)</code></pre>
-<pre><code>##          Length Class      Mode
-## context  22     data.table list
-## genes    20     data.table list
-## features  0     -none-     list</code></pre>
 <p>The first element is “context”, which is a “wide” format annotation of the query ranges. It will have the same number of rows as the query, and reports them in the same order as the query. All columns of the query are retained, and additional columns are added to summarize the genomic context with respect to gene models.</p>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nrow</span>(gm$context)</code></pre>
-<pre><code>## [1] 100</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(gm$context)</code></pre>
-<pre><code>##  [1] &quot;chr&quot;                      &quot;start&quot;                   
-##  [3] &quot;end&quot;                      &quot;width&quot;                   
-##  [5] &quot;strand&quot;                   &quot;dmrid&quot;                   
-##  [7] &quot;anodev.padj&quot;              &quot;pattern&quot;                 
-##  [9] &quot;qrow&quot;                     &quot;promoter_per&quot;            
-## [11] &quot;end3_per&quot;                 &quot;exon_per&quot;                
-## [13] &quot;intron_per&quot;               &quot;intergenic_per&quot;          
-## [15] &quot;utr5_per&quot;                 &quot;utr3_per&quot;                
-## [17] &quot;call&quot;                     &quot;call_genes&quot;              
-## [19] &quot;overlapped_genes&quot;         &quot;nearest_genes&quot;           
-## [21] &quot;distance_to_nearest_gene&quot; &quot;url&quot;</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nrow</span>(gm$context)
+<span class="kw">colnames</span>(gm$context)</code></pre>
 <p>However, gene annotations can be very complex due to overlapping/nested genes and the diversity of gene isoforms. To capture isoform-level detail, the “gene” table is generated. This is a “long” format table, which similar to an inner join in SQL, contains a row for each pair of overlaps between a query range and an entry in the gene database. Thus, there will be a row for each individual gene isoform overlapped by each query range, and there will be columns to describe which portions of the gene model are overlapped.</p>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nrow</span>(gm$genes)</code></pre>
-<pre><code>## [1] 170</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(gm$genes)</code></pre>
-<pre><code>##  [1] &quot;qrow&quot;                &quot;srow&quot;                &quot;query.chr&quot;          
-##  [4] &quot;query.start&quot;         &quot;query.end&quot;           &quot;gene.symbol&quot;        
-##  [7] &quot;gene.id&quot;             &quot;isoform.id&quot;          &quot;isoform.chr&quot;        
-## [10] &quot;isoform.start&quot;       &quot;isoform.end&quot;         &quot;isoform.strand&quot;     
-## [13] &quot;overlap.bp&quot;          &quot;query.overlap.per&quot;   &quot;isoform.overlap.per&quot;
-## [16] &quot;noncoding&quot;           &quot;Promoter&quot;            &quot;ExonIntron&quot;         
-## [19] &quot;3&#39; End&quot;              &quot;url&quot;</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">nrow</span>(gm$genes)
+<span class="kw">colnames</span>(gm$genes)</code></pre>
 <p>The final element of the list is “features”, which in this run is currently empty because no feature sets were specified. See the next section for how to add feature annotations.</p>
 <p>By default, the UCSC knownGene table is used to provide the gene database. In practice, we have found this gene set to be a good compromise between the manually-curated RefSeq and the more prediction-inclusive Ensembl genes. Goldmine provides the getGenes() function to load the genes from any of these gene sets, and the “genes” option to the goldmine() function allows using any custom list of genes. This could also be used, for example, to only annotate using a subset of one of the gene databases. In this case, we will restrict to only coding genes from RefSeq.</p>
 <pre class="sourceCode r"><code class="sourceCode r">genes &lt;-<span class="st"> </span><span class="kw">getGenes</span>(<span class="st">&quot;refseq&quot;</span>,<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)
 genes &lt;-<span class="st"> </span>genes[<span class="kw">str_detect</span>(genes$isoform.id,<span class="st">&quot;NM&quot;</span>),]
 gm &lt;-<span class="st"> </span><span class="kw">goldmine</span>(<span class="dt">query=</span>query,<span class="dt">genes=</span>genes,<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)
 <span class="kw">nrow</span>(gm$genes)</code></pre>
-<pre><code>## [1] 103</code></pre>
 </div>
 <div id="annotation-of-features" class="section level1">
 <h1>Annotation of Features</h1>
 <p>In addition to gene models, Goldmine can report annotation and overlap with any feature set available from UCSC. Please see the <a href="http://genome.ucsc.edu/cgi-bin/hgTables">UCSC Table Browser</a> to browse all tables by category for a given genome. The “describe table schema” button can provide useful descriptions of the tables.</p>
-<p>For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE can be obtained using the getFeatures() function and the special function get CpgFeatures can automatically generate CpG island/shore/shelve features for any genome with a “CpgIslandsExt” table available. If you have your own feature sets, they can also be included. Make sure they include the columns “chr”, “start”, and “end”.</p>
-<pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">getFeatures</span>(<span class="dt">tables=</span><span class="kw">c</span>(<span class="st">&quot;wgEncodeRegDnaseClusteredV3&quot;</span>, <span class="st">&quot;wgEncodeRegTfbsClusteredV3&quot;</span>),<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)</code></pre>
-<pre><code>## 
-Read 29.4% of 1867665 rows
-Read 58.4% of 1867665 rows
-Read 65.3% of 1867665 rows
-Read 96.4% of 1867665 rows
-Read 1867665 rows and 9 (of 9) columns from 0.212 GB file in 00:00:08
-## 
-Read 0.0% of 4380444 rows
-Read 29.7% of 4380444 rows
-Read 39.0% of 4380444 rows
-Read 66.9% of 4380444 rows
-Read 94.3% of 4380444 rows
-Read 4380444 rows and 9 (of 9) columns from 0.257 GB file in 00:00:09</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">c</span>(features,<span class="kw">getCpgFeatures</span>(<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir))</code></pre>
+<p>For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE can be obtained using the getFeatures() function and the special function getCpgFeatures() can automatically generate CpG island/shore/shelve features for any genome with a “CpgIslandsExt” table available. If you have your own feature sets, they can also be included. Make sure they include the columns “chr”, “start”, and “end”.</p>
+<pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">getFeatures</span>(<span class="dt">tables=</span><span class="kw">c</span>(<span class="st">&quot;wgEncodeRegDnaseClusteredV3&quot;</span>, <span class="st">&quot;wgEncodeRegTfbsClusteredV3&quot;</span>),<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)
+features &lt;-<span class="st"> </span><span class="kw">c</span>(features,<span class="kw">getCpgFeatures</span>(<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir))</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(features)</code></pre>
-<pre><code>##                             Length  Class   Mode
-## wgEncodeRegDnaseClusteredV3 1867665 GRanges S4  
-## wgEncodeRegTfbsClusteredV3  4380444 GRanges S4  
-## cpgIsland                     28691 GRanges S4  
-## cpgShore                      51914 GRanges S4  
-## cpgShelf                      43752 GRanges S4</code></pre>
 <p>When all feature sets of interest have been joined into an R list object, this object can be provided to the “features” option of goldmine() and annotation performed.</p>
 <pre class="sourceCode r"><code class="sourceCode r">gm &lt;-<span class="st"> </span><span class="kw">goldmine</span>(<span class="dt">query=</span>query,<span class="dt">features=</span>features,<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)</code></pre>
 <p>This will change the output in two ways. First, under the “context” table, there will be new columns, one for each feature set, representing the percent overlap of the query range with ranges from the feature set. Also, a detailed accounting of each overlap in “long” format is available in the “features” list. This sub-list contains a table for each feature set, and contains one row for each pair of query to feature overlaps. It includes all columns from the feature tables, so that more specific details about each feature (i.e. factor name, experiment IDs, peak scores, etc) can be examined.</p>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(gm$context)</code></pre>
-<pre><code>##  [1] &quot;chr&quot;                             &quot;start&quot;                          
-##  [3] &quot;end&quot;                             &quot;width&quot;                          
-##  [5] &quot;strand&quot;                          &quot;dmrid&quot;                          
-##  [7] &quot;anodev.padj&quot;                     &quot;pattern&quot;                        
-##  [9] &quot;qrow&quot;                            &quot;promoter_per&quot;                   
-## [11] &quot;end3_per&quot;                        &quot;exon_per&quot;                       
-## [13] &quot;intron_per&quot;                      &quot;intergenic_per&quot;                 
-## [15] &quot;utr5_per&quot;                        &quot;utr3_per&quot;                       
-## [17] &quot;call&quot;                            &quot;call_genes&quot;                     
-## [19] &quot;overlapped_genes&quot;                &quot;nearest_genes&quot;                  
-## [21] &quot;distance_to_nearest_gene&quot;        &quot;wgEncodeRegDnaseClusteredV3_per&quot;
-## [23] &quot;wgEncodeRegTfbsClusteredV3_per&quot;  &quot;cpgIsland_per&quot;                  
-## [25] &quot;cpgShore_per&quot;                    &quot;cpgShelf_per&quot;                   
-## [27] &quot;url&quot;</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(gm$features)</code></pre>
-<pre><code>##                             Length Class      Mode
-## wgEncodeRegDnaseClusteredV3 19     data.table list
-## wgEncodeRegTfbsClusteredV3  19     data.table list
-## cpgIsland                   21     data.table list
-## cpgShore                    14     data.table list
-## cpgShelf                    14     data.table list</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(gm$features$wgEncodeRegTfbsClusteredV3)</code></pre>
-<pre><code>##  [1] &quot;query.chr&quot;           &quot;query.start&quot;         &quot;query.end&quot;          
-##  [4] &quot;feature.chr&quot;         &quot;feature.start&quot;       &quot;feature.end&quot;        
-##  [7] &quot;overlap.query.per&quot;   &quot;overlap.feature.per&quot; &quot;overlap.bp&quot;         
-## [10] &quot;query_dmrid&quot;         &quot;query_anodev.padj&quot;   &quot;query_pattern&quot;      
-## [13] &quot;query_qrow&quot;          &quot;feature_name&quot;        &quot;feature_score&quot;      
-## [16] &quot;feature_expCount&quot;    &quot;feature_expNums&quot;     &quot;feature_expScores&quot;  
-## [19] &quot;feature_srow&quot;</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(gm$context)
+<span class="kw">summary</span>(gm$features)
+<span class="kw">colnames</span>(gm$features$wgEncodeRegTfbsClusteredV3)</code></pre>
 </div>
 <div id="enrichment-of-features" class="section level1">
 <h1>Enrichment of Features</h1>
 <p>Some sets of features, such as the ENCODE ChIP-seq supertrack, contain many different types of features. In the case of the ChIP-seq data, there are experimentally-derived binding sites for many different transcription factors represented. A logical question is, are any of these specific factors enriched in the query ranges when compared to a null expectation?</p>
-<p>Goldmine provides a mechanism to generate appropriate null sequence sets and test for enrichment of features using a binomial test. In particular, Goldmine can match the null set for multiple sequence covariates, including length, CpG density, GC% and repeat content.</p>
+<p>Goldmine provides a mechanism to generate appropriate null sequence sets and test for enrichment of features using a binomial test. In particular, Goldmine can match the null set for multiple sequence covariates, including length, CpG density, GC%, and repeat content.</p>
 <p>An enrichment analysis consists of three steps:</p>
 <ol style="list-style-type: decimal">
-<li>Obtain a pool of background sequences to select the null set from</li>
-<li>Match for length, and optionally, other variables to select a matched null set from the pool</li>
+<li>Obtain a background pool of sequences to select the null set from</li>
+<li>Match for length, and optionally, other variables to select a null set from the pool</li>
 <li>Count the occurrence of each feature in the query set and the null set and compute enrichment</li>
 </ol>
 <div id="background-pool-of-sequences" class="section level2">
 <h2>Background Pool of Sequences</h2>
-<p>The background pool of sequence can either be selected for a particular analysis, for example, non-differential regions from a targeted assay, or can be drawn from the genome at large. Goldmine provides a function, drawGenomePool() to draw a length-matched pool of sequences from the genome. This function requires that pool sequences do not overlap with the query or each other, do not run off chromosome ends, and do not occur in assembly gap regions as defined by the “gap” track. The pool should be made a number of times larger than the query using the “n” option. In practice, selection of “n” will need to be calibrated for the query range set. If there is a very large set with a large spread of lengths, then it may not be possible to draw very large pools for certain cases. We recommend using as large of an “n” as possible, so that the matching function has the largest pool of sequences to match from.</p>
+<p>The background pool of sequence can either be selected for a particular analysis, for example, non-differential regions from a targeted assay, or can be drawn from the genome at large. Goldmine provides a function, drawGenomePool() to draw a length-matched pool of sequences from the genome. This function requires that pool sequences do not overlap with the query or each other, do not run off chromosome ends, and do not occur in assembly gap regions as defined by the “gap” track. The pool should be made a number of times larger than the query using the “n” option. In practice, selection of “n” will need to be calibrated for the query range set. If there is a very large set with a large spread of lengths, then it may not be possible to draw very large pools for certain cases. We recommend using as large of an “n” as possible, so that the matching function has the largest pool of sequences to match from. We recommending setting and saving the seed for the random number generator so that the draw can be reproduced.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">999</span>)
 pool.gr &lt;-<span class="st"> </span><span class="kw">drawGenomePool</span>(<span class="dt">query=</span>query,<span class="dt">n=</span><span class="dv">10</span>,<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)
 <span class="kw">length</span>(pool.gr)</code></pre>
 </div>
 <div id="matched-null-set" class="section level2">
 <h2>Matched Null Set</h2>
-<p>Goldmine uses propensity score matching to extract a sub-set from the background pool that is matched for multiple sequence covariates. For this example, we will match based on length and CpG density. In order to calculate these sequence covariates, Goldmine needs access to the sequence of the genome in question. These sequences can be accessed via the BSgenome packages in Bioconductor. In this case, we will need to load the hg19 human genome. The performance of the matching is plotted in a series of histograms, QQ plots, and variable plots which will be saved at the given PDF path.</p>
+<p>Goldmine uses propensity score matching to extract a sub-set from the background pool that is matched for multiple sequence covariates. For this example, we will match based on length and CpG density. In order to calculate these sequence covariates, Goldmine needs access to the sequence of the genome in question. These sequences can be accessed via the BSgenome packages in Bioconductor. In this case, we will need to load the hg19 human genome. The performance of the matching is plotted in a series of histograms, QQ plots, and variable plots which will be saved at the given output directory path. FASTA format files of both the query set and null set are also saved in this directory, and be used for motif analysis in programs that depend on appropriate null sets such as <a href="http://www.rsat.eu/">RSAT</a> and <a href="http://meme-suite.org/tools/dreme">DREME</a>.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(BSgenome.Hsapiens.UCSC.hg19)
 bsg &lt;-<span class="st"> </span>BSgenome.Hsapiens.UCSC.hg19
 formula &lt;-<span class="st"> &quot;treat~sizeLog+freqCpG&quot;</span>
-psm &lt;-<span class="st"> </span><span class="kw">doPropMatch</span>(<span class="dt">target=</span>query, <span class="dt">pool=</span>pool.gr, <span class="dt">n=</span><span class="dv">1</span>, <span class="dt">formula=</span>formula, <span class="dt">outdir=</span><span class="st">&quot;gm_match&quot;</span>, <span class="dt">bsg=</span>bsg, <span class="dt">genome=</span>genome, <span class="dt">cachedir=</span>cachedir)</code></pre>
+psm &lt;-<span class="st"> </span><span class="kw">doPropMatch</span>(<span class="dt">query=</span>query, <span class="dt">pool=</span>pool.gr, <span class="dt">n=</span><span class="dv">1</span>, <span class="dt">formula=</span>formula, <span class="dt">outdir=</span><span class="st">&quot;gm_match&quot;</span>, <span class="dt">bsg=</span>bsg, <span class="dt">genome=</span>genome, <span class="dt">cachedir=</span>cachedir)</code></pre>
 </div>
 <div id="test-for-enrichment" class="section level2">
 <h2>Test for Enrichment</h2>
-<p>With a null set drawn, the null ranges can be used as a background set for a test of enrichment.</p>
-<p>First, we must select a set of features to test enrichment for. In this example, we will test for the ENCODE ChIP-seq peaks and TRANSFAC predicted motifs. Feature sets must be given as a data.frame, and have a column called “name” which specifies each category of feature within the feature set. In this case, “name” will be the name of the ChIP-seq protein or the ID of the predicted motif from TRANSFAC. This column already exists in the tables output by getFeatures().</p>
+<p>With a null set generated, the null ranges can be used as a background set for a test of enrichment.</p>
+<p>First, we must select a set of features to test enrichment for. In this example, we will test for the ENCODE ChIP-seq peaks and TRANSFAC predicted motifs. Feature sets must be given as a data.frame, and have a column called “name” which specifies each category of feature within the feature set. In this case, “name” will be the name of the ChIP-seq protein or the ID of the predicted motif from TRANSFAC. In the case of these two examples, this column already exists in the tables output by getFeatures().</p>
 <pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">getFeatures</span>(<span class="st">&quot;wgEncodeRegTfbsClusteredV3&quot;</span>,genome,cachedir)[[<span class="dv">1</span>]]</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r">te &lt;-<span class="st"> </span><span class="kw">testEnrichment</span>(<span class="dt">query=</span>query, <span class="dt">background=</span>psm$ranges.null, <span class="dt">features=</span>features)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">te &lt;-<span class="st"> </span><span class="kw">testEnrichment</span>(<span class="dt">query=</span>query, <span class="dt">null=</span>psm$ranges.null, <span class="dt">features=</span>features)</code></pre>
 <p>The output then contains statistics for the enrichment.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(te)</code></pre>
 <p>The test can also be performed for predicted binding sites from TRANSFAC.</p>
 <pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">getFeatures</span>(<span class="st">&quot;tfbsConsSites&quot;</span>,genome,cachedir)[[<span class="dv">1</span>]]
-te &lt;-<span class="st"> </span><span class="kw">testEnrichment</span>(<span class="dt">query=</span>query, <span class="dt">background=</span>psm$ranges.null, <span class="dt">features=</span>features)</code></pre>
+te &lt;-<span class="st"> </span><span class="kw">testEnrichment</span>(<span class="dt">query=</span>query, <span class="dt">null=</span>psm$ranges.null, <span class="dt">features=</span>features)</code></pre>
 </div>
 </div>
-<div id="appendix-direct-import-of-ucsc-genome-browser-tables" class="section level1">
-<h1>Appendix: Direct Import of UCSC Genome Browser Tables</h1>
+<div id="appendix" class="section level1">
+<h1>Appendix</h1>
+<div id="direct-import-of-ucsc-genome-browser-tables" class="section level2">
+<h2>Direct Import of UCSC Genome Browser Tables</h2>
 <p>The goldmine(), getGenes(), and getFeatures() functions all call the getUCSCTable() function. This function handles the download and caching of data from the UCSC FTP server. This function can also be used directly for custom analysis that requires easy access to these useful tables. Note that start coordinates in the raw tables are 0-based. All Goldmine output has been adjusted to be 1-based, except in the case of raw table data from getUCSCTable().</p>
 <p>For example, we could download ENCODE CTCF ChIP-seq data for the cell line HCT116:</p>
 <pre class="sourceCode r"><code class="sourceCode r">tab &lt;-<span class="st"> </span><span class="kw">getUCSCTable</span>(<span class="dt">table=</span><span class="st">&quot;wgEncodeAwgTfbsUwHct116CtcfUniPk&quot;</span>, <span class="dt">genome=</span>genome, <span class="dt">cachedir=</span>cachedir)</code></pre>
 <p>Please see the <a href="http://genome.ucsc.edu/cgi-bin/hgTables">UCSC Table Browser</a> to obtain table names and schema.</p>
+</div>
+<div id="reproducible-annotation" class="section level2">
+<h2>Reproducible Annotation</h2>
+<p>By default, Goldmine will ensure that the latest versions of reference tables from the UCSC Genome Browser are obtained. This is accomplished by comparing the date of the version in the cache to the date of the version on UCSC’s server, and if UCSC’s version is newer, the new version will be downloaded and used. To ensure reproducibility, versions can be frozen by setting the option sync=FALSE in the goldmine(), getGenes(), and getFeatures() functions. We recommend setting cachedir to a project-specific location, rather than a common location where other calls to goldmine() might download new versions of the data. Then, by setting sync=FALSE, the latest version will be downloaded the first time the script is run, and new versions will not be downloaded or checked for on subsequent runs. This ensures that the reference tables are static for a given project, so the annotation can be reproduced.</p>
+</div>
 </div>
 
 
