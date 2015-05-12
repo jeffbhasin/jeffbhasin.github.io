@@ -4,11 +4,11 @@ title: 'Methylaction: Detecting differentially methylated regions (DMRs) that di
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
-  pdf_document:
-    toc: yes
   html_document:
     highlight: tango
     self_contained: no
+    toc: yes
+  pdf_document:
     toc: yes
   word_document: default
 ---
@@ -38,7 +38,8 @@ First, start R (by typing the "R" command at the linux command line) and install
 
 ```{r,eval=FALSE}
 source("http://bioconductor.org/biocLite.R")
-biocLite(c("GenomicRanges","IRanges","devtools","DESeq","GenomicAlignments","Repitools","Rsubread","ggbio"))
+biocLite(c("GenomicRanges","IRanges","devtools","DESeq","GenomicAlignments",
+           "Repitools","Rsubread","ggbio"))
 ```
 
 Then, install both Goldmine and Methylaction from GitHub. Be sure to accept installation of any additional pre-requisite packages from CRAN.
@@ -67,7 +68,7 @@ library(methylaction)
 ```
 
 ## Describing the Experimental Design
-Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see "input/samples.csv" for an example of the format. Note that groups must be ordered in the order you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this order is the order the groups are encountered in the sample CSV file. Optionally, a column called "color" can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.
+Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see "input/samples.csv" for an example of the format. Note that comparison groups must be ordered as you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this is the same as the order the groups are encountered in the sample CSV file. Optionally, a column called "color" can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.
 
 The sample CSV file can be read into R using the readSampleInfo() command:
 ```{r}
@@ -79,7 +80,7 @@ The command will output confirmation of group sample sizes and group order.
 ## Loading Reads and Generating Count Tables
 All read alignments are read and processed from the BAM files into an RData workspace that is saved to disk, and this prevents the user from having to re-process data again for each run of Methylaction. The getReads() function obtains the coordinates of the read alignments from the BAM file. The initial stage of the program works with fragment counts in 50bp windows, which are also computed once and saved by the function getCounts().
 
-There are two other variables specific to the experiment that are needed in the next step. These are the window size (we recommend 50bp) and the fragment size which was selected for in your sequencing protocol. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study. In the case of paired end data, the fragsize variable can be set to "paired" and valid mate pairs will be used.
+There are two other variables specific to the experiment that are needed in the next step. These are the window size (we recommend 50bp) and the fragment size used for generating the sequencing library. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study. In the case of paired end data, the fragsize variable can be set to "paired" and valid mate pairs will be used.
 
 First, define the variables that will be needed for the preprocessing functions:
 
@@ -129,14 +130,14 @@ write.csv(makeDT(ma$dmr), row.names=FALSE, file="dmrs.csv")
 ```
 
 ## Interpreting the results
-The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma\$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups. All groups with the digit is 1 are hypermethylated with respect to all groups with the digit 0. To see what options the list was created using, see the ma\$args object. If you want to access data from any internal steps of the function, see the objects nested under ma\$data.
+The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma\$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups. All groups with the digit is 1 are hypermethylated with respect to all groups with the digit 0. See the ma\$args object for the arguments provided to the call of methylaction() that generated the output. If you want to access data from any internal steps of the function, see the objects nested under ma\$data.
 
 The maSummary() function provides details about the intermediate stages of the method.
 ```{r}
 maSummary(ma)
 ```
 
-The built in function table() can be used to obtain counts of DMRs by pattern and "frequent" classification.
+The built-in function table() can be used to obtain counts of DMRs by pattern and "frequent" classification.
 ```{r,eval=FALSE}
 table(ma$dmr$pattern,ma$dmr$frequent)
 ```
@@ -164,7 +165,7 @@ maTracks(ma=ma, reads=reads, path="beds")
 ```
 
 # Permutation and Bootstrap Testing
-Because of the two stage testing approach, type I error rates may be inflated with this method. To determine if this level is acceptable, we have implemented permutation and bootstrapping approaches. This establishes a false discovery rate (FDR) for each pattern of DMR among the groups. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs cut at this p-value can be used as the definitive list for the study.
+Because of the two stage testing approach, type I error rates may be inflated with this method. To determine if this level is acceptable, we have implemented permutation and bootstrapping approaches. This establishes a false discovery rate (FDR) for each pattern of DMR among the groups. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs filtered at this p-value can be used as the definitive list for the study.
 
 Bootstraps can be enabled by adding the "nperms" and "perm.boot" options to methylaction(). The resulting output list will then have an "fdr" object that reports false discovery rates (FDRs).
 ```{r, eval=FALSE}

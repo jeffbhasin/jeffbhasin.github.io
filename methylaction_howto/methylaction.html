@@ -10,7 +10,7 @@
 
 <meta name="author" content="Jeff Bhasin" />
 
-<meta name="date" content="2015-04-30" />
+<meta name="date" content="2015-05-07" />
 
 <title>Methylaction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</title>
 
@@ -76,7 +76,7 @@ img {
 <div id="header">
 <h1 class="title">Methylaction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</h1>
 <h4 class="author"><em>Jeff Bhasin</em></h4>
-<h4 class="date"><em>2015-04-30</em></h4>
+<h4 class="date"><em>2015-05-07</em></h4>
 </div>
 
 <div id="TOC">
@@ -114,7 +114,8 @@ img {
 <h1>Installation</h1>
 <p>First, start R (by typing the “R” command at the linux command line) and install pre-requisite packages from <a href="http://www.bioconductor.org">Bioconductor</a>:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
-<span class="kw">biocLite</span>(<span class="kw">c</span>(<span class="st">&quot;GenomicRanges&quot;</span>,<span class="st">&quot;IRanges&quot;</span>,<span class="st">&quot;devtools&quot;</span>,<span class="st">&quot;DESeq&quot;</span>,<span class="st">&quot;GenomicAlignments&quot;</span>,<span class="st">&quot;Repitools&quot;</span>,<span class="st">&quot;Rsubread&quot;</span>,<span class="st">&quot;ggbio&quot;</span>))</code></pre>
+<span class="kw">biocLite</span>(<span class="kw">c</span>(<span class="st">&quot;GenomicRanges&quot;</span>,<span class="st">&quot;IRanges&quot;</span>,<span class="st">&quot;devtools&quot;</span>,<span class="st">&quot;DESeq&quot;</span>,<span class="st">&quot;GenomicAlignments&quot;</span>,
+           <span class="st">&quot;Repitools&quot;</span>,<span class="st">&quot;Rsubread&quot;</span>,<span class="st">&quot;ggbio&quot;</span>))</code></pre>
 <p>Then, install both Goldmine and Methylaction from GitHub. Be sure to accept installation of any additional pre-requisite packages from CRAN.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(devtools)
 <span class="kw">install_github</span>(<span class="st">&quot;jeffbhasin/goldmine&quot;</span>)
@@ -134,7 +135,7 @@ img {
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(methylaction)</code></pre>
 <div id="describing-the-experimental-design" class="section level2">
 <h2>Describing the Experimental Design</h2>
-<p>Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see “input/samples.csv” for an example of the format. Note that groups must be ordered in the order you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this order is the order the groups are encountered in the sample CSV file. Optionally, a column called “color” can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.</p>
+<p>Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see “input/samples.csv” for an example of the format. Note that comparison groups must be ordered as you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this is the same as the order the groups are encountered in the sample CSV file. Optionally, a column called “color” can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.</p>
 <p>The sample CSV file can be read into R using the readSampleInfo() command:</p>
 <pre class="sourceCode r"><code class="sourceCode r">samp &lt;-<span class="st"> </span><span class="kw">readSampleInfo</span>(<span class="st">&quot;input/samples.csv&quot;</span>)</code></pre>
 <pre><code>## Found 9 samples in 3 groups
@@ -158,7 +159,7 @@ img {
 <div id="loading-reads-and-generating-count-tables" class="section level2">
 <h2>Loading Reads and Generating Count Tables</h2>
 <p>All read alignments are read and processed from the BAM files into an RData workspace that is saved to disk, and this prevents the user from having to re-process data again for each run of Methylaction. The getReads() function obtains the coordinates of the read alignments from the BAM file. The initial stage of the program works with fragment counts in 50bp windows, which are also computed once and saved by the function getCounts().</p>
-<p>There are two other variables specific to the experiment that are needed in the next step. These are the window size (we recommend 50bp) and the fragment size which was selected for in your sequencing protocol. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study. In the case of paired end data, the fragsize variable can be set to “paired” and valid mate pairs will be used.</p>
+<p>There are two other variables specific to the experiment that are needed in the next step. These are the window size (we recommend 50bp) and the fragment size used for generating the sequencing library. This fragment size is not the read length – it is the average size of a fragment in the sequencing library that was prepared. Often this number is available from BioAnayzer results, and should be known to whomever did the sequencing library preparation for your study. In the case of paired end data, the fragsize variable can be set to “paired” and valid mate pairs will be used.</p>
 <p>First, define the variables that will be needed for the preprocessing functions:</p>
 <pre class="sourceCode r"><code class="sourceCode r">chrs &lt;-<span class="st"> &quot;chr22&quot;</span>
 fragsize &lt;-<span class="st"> </span><span class="dv">120</span>
@@ -185,7 +186,7 @@ counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span cla
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">write.csv</span>(<span class="kw">makeDT</span>(ma$dmr), <span class="dt">row.names=</span><span class="ot">FALSE</span>, <span class="dt">file=</span><span class="st">&quot;dmrs.csv&quot;</span>)</code></pre>
 <div id="interpreting-the-results" class="section level2">
 <h2>Interpreting the results</h2>
-<p>The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups. All groups with the digit is 1 are hypermethylated with respect to all groups with the digit 0. To see what options the list was created using, see the ma$args object. If you want to access data from any internal steps of the function, see the objects nested under ma$data.</p>
+<p>The function methylaction() is designed to output a great deal of information about the internals of the DMR calling in order to facilitate comparisons between different settings and to prevent needing to re-run the command on large datasets to view intermediate states. The output object is a list. For a list of all detected DMRs, look at ma$dmr. Each DMR is assigned a pattern code, where each digit represents a group. The pattern indicates the differential methylation status between the groups. All groups with the digit is 1 are hypermethylated with respect to all groups with the digit 0. See the ma$args object for the arguments provided to the call of methylaction() that generated the output. If you want to access data from any internal steps of the function, see the objects nested under ma$data.</p>
 <p>The maSummary() function provides details about the intermediate stages of the method.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maSummary</span>(ma)</code></pre>
 <pre><code>##                                           stat   count percent
@@ -205,7 +206,7 @@ counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span cla
 ## 14             ANODEV Sig with Non-sig Pattern       0       0
 ## 15               ANODEV Sig with Ambig Pattern      67    5.04
 ## 16                                  Total DMRs    1263</code></pre>
-<p>The built in function table() can be used to obtain counts of DMRs by pattern and “frequent” classification.</p>
+<p>The built-in function table() can be used to obtain counts of DMRs by pattern and “frequent” classification.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(ma$dmr$pattern,ma$dmr$frequent)</code></pre>
 <table>
 <thead>
@@ -269,7 +270,7 @@ counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span cla
 </div>
 <div id="permutation-and-bootstrap-testing" class="section level1">
 <h1>Permutation and Bootstrap Testing</h1>
-<p>Because of the two stage testing approach, type I error rates may be inflated with this method. To determine if this level is acceptable, we have implemented permutation and bootstrapping approaches. This establishes a false discovery rate (FDR) for each pattern of DMR among the groups. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs cut at this p-value can be used as the definitive list for the study.</p>
+<p>Because of the two stage testing approach, type I error rates may be inflated with this method. To determine if this level is acceptable, we have implemented permutation and bootstrapping approaches. This establishes a false discovery rate (FDR) for each pattern of DMR among the groups. If these FDRs are too high, they can be recalculated at lower p-value thresholds until they reach acceptable levels. Then, DMRs filtered at this p-value can be used as the definitive list for the study.</p>
 <p>Bootstraps can be enabled by adding the “nperms” and “perm.boot” options to methylaction(). The resulting output list will then have an “fdr” object that reports false discovery rates (FDRs).</p>
 <pre class="sourceCode r"><code class="sourceCode r">ma &lt;-<span class="st"> </span><span class="kw">methylaction</span>(<span class="dt">samp=</span>samp, <span class="dt">counts=</span>counts, <span class="dt">reads=</span>reads, <span class="dt">perm.boot=</span>T, <span class="dt">nperms=</span><span class="dv">3</span>, <span class="dt">ncore=</span>ncore)</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(ma$fdr)</code></pre>

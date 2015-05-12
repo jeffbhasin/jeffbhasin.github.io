@@ -4,13 +4,13 @@ title: 'Goldmine: Integrating information to place epigenome-wide results into b
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
-  word_document: default
-  pdf_document:
-    toc: yes
   html_document:
     highlight: tango
     self_contained: no
     toc: yes
+  pdf_document:
+    toc: yes
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -101,7 +101,7 @@ nrow(gm$context)
 colnames(gm$context)
 ```
 
-However, gene annotations can be very complex due to overlapping/nested genes and the diversity of gene isoforms. To capture isoform-level detail, the "gene" table is generated. This is a "long" format table, which similar to an inner join in SQL, contains a row for each pair of overlaps between a query range and an entry in the gene database. Thus, there will be a row for each individual gene isoform overlapped by each query range, and there will be columns to describe which portions of the gene model are overlapped.
+However, gene annotations can be very complex due to overlapping/nested genes and the diversity of gene isoforms. To capture isoform-level detail, the "gene" table is generated. This is a "long" format table, which is similar to an inner join in SQL, contains a row for each pair of overlaps between a query range and an entry in the gene database. Thus, there will be a row for each individual gene isoform overlapped by each query range, and there will be columns to describe which portions of the gene model are overlapped.
 ```{r}
 nrow(gm$genes)
 colnames(gm$genes)
@@ -120,9 +120,11 @@ nrow(gm$genes)
 # Annotation of Features
 In addition to gene models, Goldmine can report annotation and overlap with any feature set available from UCSC. Please see the [UCSC Table Browser](http://genome.ucsc.edu/cgi-bin/hgTables) to browse all tables by category for a given genome. The "describe table schema" button can provide useful descriptions of the tables.
 
-For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE can be obtained using the getFeatures() function and the special function getCpgFeatures() can automatically generate CpG island/shore/shelve features for any genome with a "CpgIslandsExt" table available. If you have your own feature sets, they can also be included. Make sure they include the columns "chr", "start", and "end".
+For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE datasets can be obtained using the getFeatures() function and the special function getCpgFeatures() can automatically generate CpG island/shore/shelve features for any genome with a "CpgIslandsExt" table available. If you have your own feature sets, they can also be included. Make sure they include the columns "chr", "start", and "end".
 ```{r,results="none",warning=FALSE,message=FALSE,error=FALSE,cache=TRUE}
-features <- getFeatures(tables=c("wgEncodeRegDnaseClusteredV3", "wgEncodeRegTfbsClusteredV3"),genome=genome,cachedir=cachedir)
+features <- getFeatures(tables=c("wgEncodeRegDnaseClusteredV3",
+                        "wgEncodeRegTfbsClusteredV3"),
+                        genome=genome, cachedir=cachedir)
 features <- c(features,getCpgFeatures(genome=genome,cachedir=cachedir))
 ```
 ```{r,warning=FALSE,message=FALSE,error=FALSE}
@@ -141,6 +143,11 @@ summary(gm$features)
 colnames(gm$features$wgEncodeRegTfbsClusteredV3)
 ```
 
+The gmWrite() function simplifies saving all tables in an output list from goldmine() as CSV files for viewing in a spreadsheet or processing outside of R.
+```{r,warning=FALSE,message=FALSE,error=FALSE}
+gmWrite(gm, path="gm_csv")
+```
+
 # Enrichment of Features
 Some sets of features, such as the ENCODE ChIP-seq supertrack, contain many different types of features. In the case of the ChIP-seq data, there are experimentally-derived binding sites for many different transcription factors represented. A logical question is, are any of these specific factors enriched in the query ranges when compared to a null expectation?
 
@@ -148,18 +155,22 @@ Goldmine provides a mechanism to generate appropriate null sequence sets and tes
 
 An enrichment analysis consists of three steps:
 
-1. Obtain a background pool of sequences to select the null set from
+1. Obtain a background pool of sequences from which to select the null set
 2. Match for length, and optionally, other variables to select a null set from the pool
 3. Count the occurrence of each feature in the query set and the null set and compute enrichment
 
 ## Background Pool of Sequences
-The background pool of sequence can either be selected for a particular analysis, for example, non-differential regions from a targeted assay, or can be drawn from the genome at large. Goldmine provides a function, drawGenomePool() to draw a length-matched pool of sequences from the genome. This function requires that pool sequences do not overlap with the query or each other, do not run off chromosome ends, and do not occur in assembly gap regions as defined by the "gap" track. The pool should be made a number of times larger than the query using the "n" option. In practice, selection of "n" will need to be calibrated for the query range set. If there is a very large set with a large spread of lengths, then it may not be possible to draw very large pools for certain cases. We recommend using as large of an "n" as possible, so that the matching function has the largest pool of sequences to match from. We recommending setting and saving the seed for the random number generator so that the draw can be reproduced.
+The background pool of sequences can either be selected for a particular analysis, for example, non-differential regions from a targeted assay, or can be drawn from the genome at large. Goldmine provides a function, drawGenomePool() to draw a length-matched pool of sequences from the genome. This function requires that pool sequences do not overlap with the query or each other, do not run off chromosome ends, and do not occur in assembly gap regions as defined by the "gap" track. The pool should be made a number of times larger than the query using the "n" option. In practice, selection of "n" will need to be calibrated for the query range set. If there is a very large set with a large spread of lengths, then it may not be possible to draw very large pools for certain cases. We recommend using as large of an "n" as possible, so that the matching function has the largest pool of sequences to match from. We recommending setting and saving the seed for the random number generator so that the draw can be reproduced.
 
 ```{r,warning=FALSE,message=FALSE,error=FALSE,cache=TRUE,eval=FALSE}
 set.seed(999)
-pool.gr <- drawGenomePool(query=query,n=10,genome=genome,cachedir=cachedir)
+pool.gr <- drawGenomePool(query=query,n=10,
+                          chrs=paste0("chr",c(1:22,"X","Y")),
+                          genome=genome,cachedir=cachedir)
 length(pool.gr)
 ```
+
+Note that the "chrs" option is highly recommended. If not set, the function will restrict to only the chromosomes names present in query. We recommending setting "chrs" to the names of all the canonical chromosomes (autosomes and sex chromosomes) in your genome. For the human genome, this would be chr1 through chr22, chrX, and chrY (as set in the example above).
 
 ## Matched Null Set
 Goldmine uses propensity score matching to extract a sub-set from the background pool that is matched for multiple sequence covariates. For this example, we will match based on length and CpG density. In order to calculate these sequence covariates, Goldmine needs access to the sequence of the genome in question. These sequences can be accessed via the BSgenome packages in Bioconductor. In this case, we will need to load the hg19 human genome. The performance of the matching is plotted in a series of histograms, QQ plots, and variable plots which will be saved at the given output directory path. FASTA format files of both the query set and null set are also saved in this directory, and be used for motif analysis in programs that depend on appropriate null sets such as [RSAT](http://www.rsat.eu/) and [DREME](http://meme-suite.org/tools/dreme).
@@ -168,7 +179,10 @@ Goldmine uses propensity score matching to extract a sub-set from the background
 library(BSgenome.Hsapiens.UCSC.hg19)
 bsg <- BSgenome.Hsapiens.UCSC.hg19
 formula <- "treat~sizeLog+freqCpG"
-psm <- doPropMatch(query=query, pool=pool.gr, n=1, formula=formula, outdir="gm_match", bsg=bsg, genome=genome, cachedir=cachedir)
+psm <- doPropMatch(query=query, pool=pool.gr, n=1, formula=formula,
+                   outdir="gm_match",
+                   bsg=bsg,
+                   genome=genome, cachedir=cachedir)
 ```
 
 ## Test for Enrichment
@@ -180,18 +194,24 @@ features <- getFeatures("wgEncodeRegTfbsClusteredV3",genome,cachedir)[[1]]
 ```
 
 ```{r,warning=FALSE,message=FALSE,error=FALSE,cache=TRUE,eval=FALSE}
-te <- testEnrichment(query=query, null=psm$ranges.null, features=features)
+te_enc <- testEnrichment(query=query, null=psm$ranges.null, features=features)
 ```
 
 The output then contains statistics for the enrichment.
 ```{r,warning=FALSE,message=FALSE,error=FALSE,cache=TRUE,eval=FALSE}
-colnames(te)
+colnames(te_enc)
 ```
 
 The test can also be performed for predicted binding sites from TRANSFAC.
 ```{r,warning=FALSE,message=FALSE,error=FALSE,cache=TRUE,eval=FALSE}
 features <- getFeatures("tfbsConsSites",genome,cachedir)[[1]]
-te <- testEnrichment(query=query, null=psm$ranges.null, features=features)
+te_trans <- testEnrichment(query=query, null=psm$ranges.null, features=features)
+```
+
+The output from a call to testEnrichment() can be saved using R's built in write.csv() function for viewing in a spreadsheet program or processing outside of R.
+```{r,warning=FALSE,message=FALSE,error=FALSE,cache=TRUE,eval=FALSE}
+write.csv(te_enc,row.names=F,file="te_enc.csv")
+write.csv(te_trans,row.names=F,file="te_trans.csv")
 ```
 
 # Appendix
@@ -201,7 +221,8 @@ The goldmine(), getGenes(), and getFeatures() functions all call the getUCSCTabl
 
 For example, we could download ENCODE CTCF ChIP-seq data for the cell line HCT116:
 ```{r,warning=FALSE,message=FALSE,error=FALSE,cache=TRUE,eval=FALSE}
-tab <- getUCSCTable(table="wgEncodeAwgTfbsUwHct116CtcfUniPk", genome=genome, cachedir=cachedir)
+tab <- getUCSCTable(table="wgEncodeAwgTfbsUwHct116CtcfUniPk",
+                        genome=genome, cachedir=cachedir)
 ```
 
 Please see the [UCSC Table Browser](http://genome.ucsc.edu/cgi-bin/hgTables) to obtain table names and schema.
