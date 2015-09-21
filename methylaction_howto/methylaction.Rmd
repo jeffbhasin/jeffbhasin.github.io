@@ -50,7 +50,7 @@ install_github("jeffbhasin/methylaction")
 ```
 
 # Obtaining the Example Data
-Please obtain the "methylaction_demo.tar.gz" file and extract it. This contains all the example input data needed to complete this how-to.
+Please obtain the "methylaction_demo.tar.gz" file and extract it. This archive can be donwloaded from the [methylaction_demo repository releases page](https://github.com/jeffbhasin/methylaction_demo/releases). This contains all the example input data needed to complete this how-to.
 
 From the linux command line, use the command "tar -zxvf methylaction_demo.tar.gz" for extraction.
 
