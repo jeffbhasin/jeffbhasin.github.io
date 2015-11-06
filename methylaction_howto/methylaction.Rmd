@@ -4,13 +4,13 @@ title: 'MethylAction: Detecting differentially methylated regions (DMRs) that di
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
-  word_document: default
   pdf_document:
     toc: yes
   html_document:
     highlight: tango
     self_contained: no
     toc: yes
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +26,7 @@ load("/Users/bhasinj/Documents/methylaction_demo/output/ma.rd")
 This how-to will demonstrate the use of MethylAction to detect differentially methylated regions (DMRs) among three groups using data from MBD-isolated Genome Sequencing (MiGS). While MethylAction is designed for genome-wide analysis, this example data is only for a subset of the genome and a subset of samples so the example can be worked through quickly. Please refer to the function documentation for advanced options.
 
 # Prerequisites
-* R Installed (download from http://cran.r-project.org/)
+* R version 3.2.1 or later installed (download from http://cran.r-project.org/)
 * A linux/unix-based server or workstation (includes Mac OS X)
 
 RAM and CPU requirements will depend on the depth of the sequencing and the number of samples and groups. We recommend very high performance machines. As a reference, we used a linux server with 20 cores of 2.80GHz CPUs and 64GB of RAM for a genome-wide analysis of 22 samples across 3 groups. A high performance computing cluster (HPC) was used to obtain 1,000s of permutations.
@@ -71,7 +71,7 @@ library(methylaction)
 Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see "input/samples.csv" for an example of the format. Note that comparison groups must be ordered as you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this is the same as the order the groups are encountered in the sample CSV file. Optionally, a column called "color" can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.
 
 The sample CSV file can be read into R using the readSampleInfo() command:
-```{r}
+```{r,eval=FALSE}
 samp <- readSampleInfo("input/samples.csv")
 print(samp)
 ```
@@ -148,11 +148,11 @@ knitr::kable(table(ma$dmr$pattern,ma$dmr$frequent))
 
 # Vizualization of DMRs
 DMRs can be visualized genome-wide via a heatmap or karyogram.
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=9,fig.width=7}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=9,fig.width=7,dev=c('pdf', 'png')}
 maHeatmap(ma)
 ```
 
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=2, fig.width=6}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=2, fig.width=6,dev=c('pdf', 'png')}
 maKaryogram(ma=ma, reads=reads)
 ```
 

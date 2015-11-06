@@ -10,7 +10,7 @@
 
 <meta name="author" content="Jeff Bhasin" />
 
-<meta name="date" content="2015-05-25" />
+<meta name="date" content="2015-11-06" />
 
 <title>MethylAction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</title>
 
@@ -76,7 +76,7 @@ img {
 <div id="header">
 <h1 class="title">MethylAction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</h1>
 <h4 class="author"><em>Jeff Bhasin</em></h4>
-<h4 class="date"><em>2015-05-25</em></h4>
+<h4 class="date"><em>2015-11-06</em></h4>
 </div>
 
 <div id="TOC">
@@ -104,7 +104,7 @@ img {
 <div id="prerequisites" class="section level1">
 <h1>Prerequisites</h1>
 <ul>
-<li>R Installed (download from <a href="http://cran.r-project.org/" class="uri">http://cran.r-project.org/</a>)</li>
+<li>R version 3.2.1 or later installed (download from <a href="http://cran.r-project.org/" class="uri">http://cran.r-project.org/</a>)</li>
 <li>A linux/unix-based server or workstation (includes Mac OS X)</li>
 </ul>
 <p>RAM and CPU requirements will depend on the depth of the sequencing and the number of samples and groups. We recommend very high performance machines. As a reference, we used a linux server with 20 cores of 2.80GHz CPUs and 64GB of RAM for a genome-wide analysis of 22 samples across 3 groups. A high performance computing cluster (HPC) was used to obtain 1,000s of permutations.</p>
@@ -123,7 +123,7 @@ img {
 </div>
 <div id="obtaining-the-example-data" class="section level1">
 <h1>Obtaining the Example Data</h1>
-<p>Please obtain the “methylaction_demo.tar.gz” file and extract it. This contains all the example input data needed to complete this how-to.</p>
+<p>Please obtain the “methylaction_demo.tar.gz” file and extract it. This archive can be donwloaded from the <a href="https://github.com/jeffbhasin/methylaction_demo/releases">methylaction_demo repository releases page</a>. This contains all the example input data needed to complete this how-to.</p>
 <p>From the linux command line, use the command “tar -zxvf methylaction_demo.tar.gz” for extraction.</p>
 <p>Note that your session of R must have the working directory set to the location of the “methylaction_demo” folder extracted from the tar.gz file so paths to files in this how-to will be valid. Use the “setwd()” function to set this directory.</p>
 <p>For example (change to your location):</p>
@@ -137,23 +137,8 @@ img {
 <h2>Describing the Experimental Design</h2>
 <p>Unique sample identifiers, paths to BAM files, group assignments, and any sample covariates are defined in a CSV file. Please see “input/samples.csv” for an example of the format. Note that comparison groups must be ordered as you want the groups to appear in the output results. This is important, because in the output, patterns between the groups will be coded using sequences of binary digits, where each digit represents a group, and this is the same as the order the groups are encountered in the sample CSV file. Optionally, a column called “color” can be provided that defines colors for each groups. These will be used in certain plotting and reporting functions. If this column is omitted, colors are automatically assigned using RColorBrewer.</p>
 <p>The sample CSV file can be read into R using the readSampleInfo() command:</p>
-<pre class="sourceCode r"><code class="sourceCode r">samp &lt;-<span class="st"> </span><span class="kw">readSampleInfo</span>(<span class="st">&quot;input/samples.csv&quot;</span>)</code></pre>
-<pre><code>## Found 9 samples in 3 groups
-## Group order for pattern and contrast digits will be: benign, low, high
-## Number of samples in each group:</code></pre>
-<pre><code>## benign    low   high 
-##      3      3      3</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(samp)</code></pre>
-<pre><code>##   sample  group                 bam ancestry   color
-## 1    BE1 benign input/BE1.chr22.bam european #4daf4a
-## 2    BE2 benign input/BE2.chr22.bam european #4daf4a
-## 3    BE3 benign input/BE3.chr22.bam european #4daf4a
-## 4    LE1    low input/LE1.chr22.bam european #377eb8
-## 5    LE2    low input/LE2.chr22.bam european #377eb8
-## 6    LE3    low input/LE3.chr22.bam european #377eb8
-## 7    HE1   high input/HE1.chr22.bam european #e41a1c
-## 8    HE2   high input/HE2.chr22.bam european #e41a1c
-## 9    HE3   high input/HE3.chr22.bam european #e41a1c</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">samp &lt;-<span class="st"> </span><span class="kw">readSampleInfo</span>(<span class="st">&quot;input/samples.csv&quot;</span>)
+<span class="kw">print</span>(samp)</code></pre>
 <p>The command will output confirmation of group sample sizes and group order.</p>
 </div>
 <div id="loading-reads-and-generating-count-tables" class="section level2">
@@ -260,9 +245,9 @@ counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span cla
 <h1>Vizualization of DMRs</h1>
 <p>DMRs can be visualized genome-wide via a heatmap or karyogram.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maHeatmap</span>(ma)</code></pre>
-<p><img src="methylaction_files/figure-html/unnamed-chunk-16-1.png" title="" alt="" width="672" /></p>
+<p><img src="methylaction_files/figure-html/unnamed-chunk-16-1.pdf" title="" alt="" width="672" /></p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maKaryogram</span>(<span class="dt">ma=</span>ma, <span class="dt">reads=</span>reads)</code></pre>
-<p><img src="methylaction_files/figure-html/unnamed-chunk-17-1.png" title="" alt="" width="576" /></p>
+<p><img src="methylaction_files/figure-html/unnamed-chunk-17-1.pdf" title="" alt="" width="576" /></p>
 <p>In this case, the Karyogram only spans chr22 due to the subset of data for this example.</p>
 <p>It is also useful to view DMRs and the windowed sequencing read counts in a genome browser, such as the UCSC genome browser. The maBed() and maTracks() functions can create BED files suitable for uploading as custom tracks to <a href="http://genome.ucsc.edu/" class="uri">http://genome.ucsc.edu/</a>.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maBed</span>(ma,<span class="dt">file=</span><span class="st">&quot;dmrs.bed&quot;</span>)
