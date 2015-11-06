@@ -148,11 +148,11 @@ knitr::kable(table(ma$dmr$pattern,ma$dmr$frequent))
 
 # Vizualization of DMRs
 DMRs can be visualized genome-wide via a heatmap or karyogram.
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=9,fig.width=7,dev=c('pdf', 'png')}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=9,fig.width=7,dev=c('png', 'pdf')}
 maHeatmap(ma)
 ```
 
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=2, fig.width=6,dev=c('pdf', 'png')}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=2, fig.width=6,dev=c('png', 'pdf')}
 maKaryogram(ma=ma, reads=reads)
 ```
 

@@ -245,9 +245,9 @@ counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span cla
 <h1>Vizualization of DMRs</h1>
 <p>DMRs can be visualized genome-wide via a heatmap or karyogram.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maHeatmap</span>(ma)</code></pre>
-<p><img src="methylaction_files/figure-html/unnamed-chunk-16-1.pdf" title="" alt="" width="672" /></p>
+<p><img src="methylaction_files/figure-html/unnamed-chunk-16-1.png" title="" alt="" width="672" /></p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maKaryogram</span>(<span class="dt">ma=</span>ma, <span class="dt">reads=</span>reads)</code></pre>
-<p><img src="methylaction_files/figure-html/unnamed-chunk-17-1.pdf" title="" alt="" width="576" /></p>
+<p><img src="methylaction_files/figure-html/unnamed-chunk-17-1.png" title="" alt="" width="576" /></p>
 <p>In this case, the Karyogram only spans chr22 due to the subset of data for this example.</p>
 <p>It is also useful to view DMRs and the windowed sequencing read counts in a genome browser, such as the UCSC genome browser. The maBed() and maTracks() functions can create BED files suitable for uploading as custom tracks to <a href="http://genome.ucsc.edu/" class="uri">http://genome.ucsc.edu/</a>.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maBed</span>(ma,<span class="dt">file=</span><span class="st">&quot;dmrs.bed&quot;</span>)
