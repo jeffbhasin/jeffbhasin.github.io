@@ -4,13 +4,13 @@ title: 'MethylAction: Detecting differentially methylated regions (DMRs) that di
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
+  word_document: default
   pdf_document:
     toc: yes
   html_document:
     highlight: tango
     self_contained: no
     toc: yes
-  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -89,6 +89,14 @@ chrs <- "chr22"
 fragsize <- 120
 winsize <- 50
 ncore <- 1
+```
+
+While the demo BAM files contain only chr22 to reduce size, MethylAction can be run genome-wide on your own dataset. To do this, specify "chrs" as a vector of chromosome names. We recommend excluding the sex chromosomes in mixed-sex cohorts.
+```{r}
+# For human autosomes (chr1 to chr22)
+chrs <- paste0("chr",1:22)
+# Including the sex chromosomes
+chrs <- paste0("chr",c(1:22,"X","Y"))
 ```
 
 Then, read in alignments and generate binned count tables (these steps may be memory, disk, and CPU intensive):

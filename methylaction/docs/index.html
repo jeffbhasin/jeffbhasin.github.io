@@ -75,7 +75,7 @@ img {
 <div id="header">
 <h1 class="title">MethylAction: Detecting differentially methylated regions (DMRs) that distinguish disease subtypes</h1>
 <h4 class="author"><em>Jeff Bhasin</em></h4>
-<h4 class="date"><em>2015-11-06</em></h4>
+<h4 class="date"><em>2016-01-15</em></h4>
 </div>
 
 <div id="TOC">
@@ -149,6 +149,11 @@ img {
 fragsize &lt;-<span class="st"> </span><span class="dv">120</span>
 winsize &lt;-<span class="st"> </span><span class="dv">50</span>
 ncore &lt;-<span class="st"> </span><span class="dv">1</span></code></pre>
+<p>While the demo BAM files contain only chr22 to reduce size, MethylAction can be run genome-wide on your own dataset. To do this, specify “chrs” as a vector of chromosome names. We recommend excluding the sex chromosomes in mixed-sex cohorts.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># For human autosomes (chr1 to chr22)</span>
+chrs &lt;-<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;chr&quot;</span>,<span class="dv">1</span>:<span class="dv">22</span>)
+<span class="co"># Including the sex chromosomes</span>
+chrs &lt;-<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;chr&quot;</span>,<span class="kw">c</span>(<span class="dv">1</span>:<span class="dv">22</span>,<span class="st">&quot;X&quot;</span>,<span class="st">&quot;Y&quot;</span>))</code></pre>
 <p>Then, read in alignments and generate binned count tables (these steps may be memory, disk, and CPU intensive):</p>
 <pre class="sourceCode r"><code class="sourceCode r">reads &lt;-<span class="st"> </span><span class="kw">getReads</span>(<span class="dt">samp=</span>samp, <span class="dt">chrs=</span>chrs, <span class="dt">fragsize=</span>fragsize, <span class="dt">ncore=</span>ncore)
 counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span class="dt">samp=</span>samp, <span class="dt">reads=</span>reads, <span class="dt">chrs=</span>chrs, <span class="dt">winsize=</span>winsize, <span class="dt">ncore=</span>ncore)</code></pre>
@@ -244,9 +249,9 @@ counts &lt;-<span class="st"> </span><span class="kw">getCounts</span>(<span cla
 <h1>Vizualization of DMRs</h1>
 <p>DMRs can be visualized genome-wide via a heatmap or karyogram.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maHeatmap</span>(ma)</code></pre>
-<p><img src="methylaction_files/figure-html/unnamed-chunk-16-1.png" title="" alt="" width="672" /></p>
+<p><img src="methylaction_files/figure-html/unnamed-chunk-17-1.png" title="" alt="" width="672" /></p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maKaryogram</span>(<span class="dt">ma=</span>ma, <span class="dt">reads=</span>reads)</code></pre>
-<p><img src="methylaction_files/figure-html/unnamed-chunk-17-1.png" title="" alt="" width="576" /></p>
+<p><img src="methylaction_files/figure-html/unnamed-chunk-18-1.png" title="" alt="" width="576" /></p>
 <p>In this case, the Karyogram only spans chr22 due to the subset of data for this example.</p>
 <p>It is also useful to view DMRs and the windowed sequencing read counts in a genome browser, such as the UCSC genome browser. The maBed() and maTracks() functions can create BED files suitable for uploading as custom tracks to <a href="http://genome.ucsc.edu/" class="uri">http://genome.ucsc.edu/</a>.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">maBed</span>(ma,<span class="dt">file=</span><span class="st">&quot;dmrs.bed&quot;</span>)
