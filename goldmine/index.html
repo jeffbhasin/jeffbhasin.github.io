@@ -18,13 +18,11 @@ title: "Goldmine: Integrating information to place epigenome-wide results into b
 
  <div class="container">
     <h1>What is Goldmine?</h1>
-    <p>Goldmine is an R package that integrates information to help biologists interpret the genomic ranges that result from epigenome-wide sequencing experiments. The package takes as input any set of genomic ranges (defined by chromosome, start, end) and will annotate these ranges with respect to known genes and features. The package can also perform statistical enrichment for features using a background set that can be matched for multiple covariates.</p>
+    <p>Goldmine is an R package that integrates information to help biologists interpret the genomic ranges that result from epigenome-wide sequencing experiments. The package takes as input any set of genomic ranges (defined by chromosome, start, end) and will annotate these ranges with respect to known genes and features.</p>
     <p><h3>Key Features:</h3>
       <ul>
         <li>Annotates genomic context for sets of genomic ranges (promoter, gene 3' end, exon, intron, intergenic)</li>
         <li>Detailed accounting of specific gene model and feature overlaps (including CpG islands/shores/shelves, COSMIC mutations, GWAS catalog loci, and ENCODE DNaseI sites)</li>
-        <li>Computes enrichment for specific features (including ENCODE ChIP-seq peaks and TRANSFAC motifs)</li>
-        <li>Derives multivariate-matched background sequence sets that can serve as input for other enrichment tools</li>
         <li>Downloads and caches the most up-to-date data from the <a href="http://genome.ucsc.edu/">UCSC Genome Browser</a> (including gene sets: UCSC, RefSeq, ENSEMBL; feature sets: ENCODE ChIP-seq supertracks, ENCODE DNaseI supertrack, CpG islands; and all other tables available from UCSC.)</li>
         <li>Works for any species with an assembled and annotated genome available from UCSC</li>
     </ul></p>
