@@ -1,5 +1,5 @@
 ---
-title: 'Goldmine: Integrating information to place epigenome-wide results into biological
+title: 'Goldmine: Integrating information to place sets of genomic ranges into biological
   contexts'
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
@@ -16,6 +16,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache=FALSE)
 knitr::opts_chunk$set(eval=FALSE)
+load("/Users/bhasinj/Documents/goldmine_demo.rd")
 ```
 
 # Purpose
@@ -39,7 +40,10 @@ library(devtools)
 install_github("jeffbhasin/goldmine")
 ```
 
-# Loading Genomic Ranges
+# Example 1: Annotation of Any Set of Genomic Ranges
+This example will demonstrate how to save detailed gene model and feature annotations for any set of query ranges using Goldmine. Summarization and plotting of context proportions across the range set is also demonstrated. A list of variable-size genomic ranges representing regions with changes in DNA methylation is used as an example. This query range set can be interchanged for any set of interest.
+
+## Loading Genomic Ranges
 After Goldmine is installed, it must be loaded before the functions will be available to a session of R:
 ```{r,warning=FALSE,message=FALSE,error=FALSE,eval=TRUE}
 library(goldmine)
@@ -58,7 +62,7 @@ If you are providing your own set of ranges, be sure the data contains the colum
 head(query)
 ```
 
-# Annotation of Genomic Ranges
+## Annotation of Genomic Ranges
 Both summary ("wide" format) and detailed ("long" format) annotations are produced by the goldmine() function. The data source for the gene and feature sets is the table archive of the UCSC Genome Browser. The first time a table is needed, Goldmine will download and cache the table. On subsequent calls to goldmine(), and other functions that access UCSC Genome Browser tables, the data will only be re-downloaded if there has been an update to the table on UCSC's server. It is the user's responsibility to ensure their use of this external resource meets UCSC's [Conditions of Use](http://genome.ucsc.edu/conditions.html).
 
 To enable UCSC table caching, please choose a cache directory. This is a folder on your computer that Goldmine will use to download and cache the reference data used for the annotations. For the purposes of this example, we will use a folder called "gbcache" in the current working directory. Please set the value of the cachedir variable to point to your cache directory of choice.
@@ -103,7 +107,7 @@ gm <- goldmine(query=query,genes=genes,genome=genome,cachedir=cachedir)
 nrow(gm$genes)
 ```
 
-# Annotation of Features
+## Annotation of Features
 In addition to gene models, Goldmine can report annotation and overlap with any feature set available from UCSC. Please see the [UCSC Table Browser](http://genome.ucsc.edu/cgi-bin/hgTables) to browse all tables by category for a given genome. The "describe table schema" button can provide useful descriptions of the tables.
 
 For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE datasets can be obtained using the getFeatures() function and the special function getCpgFeatures() can automatically generate CpG island/shore/shelve features for any genome with a "CpgIslandsExt" table available. If you have your own feature sets, they can also be included. Make sure they include the columns "chr", "start", and "end".
@@ -135,8 +139,6 @@ The gmWrite() function simplifies saving all tables in an output list from goldm
 gmWrite(gm, path="gm_csv")
 ```
 
-# Appendix
-
 ## Summary Plots of Gene Model and Feature Context Proportions
 A simple way to summarize Goldmine’s annotation results is to plot the proportion of query genomic ranges assigned to each gene model context. This can be accomplished by aggregating Goldmine’s “context” output using data.table and plotting a bar graph using ggplot2.
 
@@ -163,12 +165,55 @@ featcon <- gm$context[,list(CPGisland=sum(cpgIsland_per>0)/length(chr),
                         TFBS=sum(wgEncodeRegTfbsClusteredV3_per>0)/length(chr),
                         DNaseI=sum(wgEncodeRegDnaseClusteredV3_per>0)/length(chr)),
                         by=c("pattern")]
-featcon <- melt(featcon)
+featcon <- melt(featcon,id.vars=c("pattern"))
 setnames(featcon,c("variable","value"),c("call","percent"))
 featcon
 ggplot(featcon,aes(x=call,y=percent,fill=pattern)) + geom_bar(stat="identity",
                         position="dodge") + ggnice() + labs(title="Feature Context of DMRs")
 ```
+
+# Example 2: Meta-Analysis of Many Range Sets
+The goldmine() function can also be used to annotate large sets of genomic ranges, and compare the context proportions of different subsets. To demonstrate Goldmine on a larger scale, we show how to use the package to annotate the genomic contexts for each factor in the ENCODE ChIP-seq supertrack and compare contexts among all 161 factors.
+
+First, we will obtain the ENCODE supertrack containing all binding sites for all factors in one table.
+```{r,warning=FALSE,message=FALSE,error=FALSE,eval=FALSE}
+etf <- getFeatures("wgEncodeRegTfbsClusteredV3",
+                        genome=genome,cachedir=cachedir)[[1]]
+length(etf)
+length(unique(etf$name))
+```
+
+Next, we run Goldmine on the entire table. This run may take a few minutes to complete, depending on your hardware. We specify the contextonly option here to increase efficiency, as we are only interested in the context output for this analysis.
+```{r,warning=FALSE,message=FALSE,error=FALSE,eval=FALSE}
+con <- goldmine(etf,genome=genome,cachedir=cachedir,contextonly=TRUE)
+```
+
+Then, we aggregate the proportions of each context within each factor using data.table.
+```{r,warning=FALSE,message=FALSE,error=FALSE,eval=TRUE}
+agg <- con[,list(n=length(chr)),by=c("name","call")]
+agg <- agg[,list(call=call,n=n,frac=n/sum(n)),by="name"]
+head(agg)
+```
+
+This table can be used to plot a stack of proportions using ggplot2. We first sort by the promoter fraction.
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=6, fig.width=5,dev=c('png'),eval=TRUE}
+levs <- agg[call=="promoter",][order(frac,decreasing=T),]$name
+agg$name <- factor(agg$name,levels=levs)
+agg <- agg[order(agg$name),]
+agg$call <- factor(agg$call,
+                   levels=c("promoter","exon","intron","3' end","intergenic"))
+agg <- agg[order(agg$call),]
+ggplot(agg,aes(x=name,y=frac,fill=call)) + geom_bar(stat="identity",
+                  width=1.3) + ggnice() + coord_flip() + theme(
+                  axis.ticks.y=element_blank(), 
+                  axis.text.y=element_blank()) + scale_fill_manual(values=
+                  c("promoter"="#e41a1c","exon"="#4daf4a","intron"="#377eb8",
+                  "3' end"="#ff7f00","intergenic"="#984ea3")) + theme(legend.position="bottom")
+```
+
+On this plot, each row represents a factor from the ENCODE ChIP-seq supertrack. Each row is a bar graph, filled proportionally to the fraction of binding sites for each factor that fall in each genomic context. Row labels have been omitted given the size of the dataset. A spectrum of context biases is visible ranging from nearly entirely promoter-bound to those that are nearly all non-promoter binding.
+
+# Appendix
 
 ## Direct Import of UCSC Genome Browser Tables
 The goldmine(), getGenes(), and getFeatures() functions all call the getUCSCTable() function. This function handles the download and caching of data from the UCSC FTP server. This function can also be used directly for custom analysis that requires easy access to these useful tables. Note that start coordinates in the raw tables are 0-based. All Goldmine output has been adjusted to be 1-based, except in the case of raw table data from getUCSCTable().
