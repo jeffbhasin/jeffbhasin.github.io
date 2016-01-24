@@ -4,13 +4,13 @@ title: 'Goldmine: Integrating information to place sets of genomic ranges into b
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
-  word_document: default
   pdf_document:
     toc: yes
   html_document:
     highlight: tango
     self_contained: no
     toc: yes
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -121,7 +121,7 @@ features <- c(features,getCpgFeatures(genome=genome,cachedir=cachedir))
 summary(features)
 ```
 
-When all feature sets of interest have been joined into an R list object, this object can be provided to the "features" option of goldmine() and annotation performed. In this example we also use the ENSEMBL genes. Goldmine simultaneously performs both gene model and feature enrichment.
+When all feature sets of interest have been joined into an R list object, this object can be provided to the "features" option of goldmine() and annotation performed. In this example we also use the ENSEMBL genes.
 ```{r,warning=FALSE,message=FALSE,error=FALSE,eval=TRUE}
 gm <- goldmine(query=query,genes=getGenes("ensembl",genome=genome,cachedir)
                         ,features=features,genome=genome,cachedir=cachedir)
@@ -152,13 +152,13 @@ gencon
 ```
 
 To plot using ggplot2:
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('png'),eval=TRUE}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('pdf'),eval=TRUE}
 ggplot(gencon,aes(x=call,y=fraction,fill=pattern)) + geom_bar(stat="identity",
                         position="dodge") + ggnice() + labs(title="Genomic Context of DMRs")
 ```
 
 A similar approach can be used to plot feature proportions. In this case, we first convert the fractional overlaps to TRUE/FALSE overlap calls before aggregating and plotting.
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('png'),eval=TRUE}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('pdf'),eval=TRUE}
 featcon <- gm$context[,list(CPGisland=sum(cpgIsland_per>0)/length(chr),
                         CPGshore=sum(cpgShore_per>0)/length(chr),
                         CPGshelf=sum(cpgShelf_per>0)/length(chr),
@@ -196,7 +196,7 @@ head(agg)
 ```
 
 This table can be used to plot a stack of proportions using ggplot2. We first sort by the promoter fraction.
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=6, fig.width=5,dev=c('png'),eval=TRUE}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=6, fig.width=5,dev=c('pdf'),eval=TRUE}
 levs <- agg[call=="promoter",][order(frac,decreasing=T),]$name
 agg$name <- factor(agg$name,levels=levs)
 agg <- agg[order(agg$name),]
