@@ -4,13 +4,13 @@ title: 'Goldmine: Integrating information to place sets of genomic ranges into b
 author: "Jeff Bhasin"
 date: '`r Sys.Date()`'
 output:
+  word_document: default
   pdf_document:
     toc: yes
   html_document:
     highlight: tango
     self_contained: no
     toc: yes
-  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -108,6 +108,8 @@ nrow(gm$genes)
 ```
 
 ## Annotation of Features
+
+### Feature Sets Available from the UCSC Table Set
 In addition to gene models, Goldmine can report annotation and overlap with any feature set available from UCSC. Please see the [UCSC Table Browser](http://genome.ucsc.edu/cgi-bin/hgTables) to browse all tables by category for a given genome. The "describe table schema" button can provide useful descriptions of the tables.
 
 For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE datasets can be obtained using the getFeatures() function and the special function getCpgFeatures() can automatically generate CpG island/shore/shelve features for any genome with a "CpgIslandsExt" table available. If you have your own feature sets, they can also be included. Make sure they include the columns "chr", "start", and "end".
@@ -121,6 +123,24 @@ features <- c(features,getCpgFeatures(genome=genome,cachedir=cachedir))
 summary(features)
 ```
 
+### Loading of External Feature Databases
+Goldmine is in no way limited to using data from the UCSC tables. Any set of reference genomic ranges from any source can be loaded, for example, from BED files. Here we show an example of loading data from the [Roadmap Epigenomics Project](http://egg2.wustl.edu/roadmap/web_portal/index.html).
+
+In this example, we are interested in how DMRs may overlap and interact with known regulatory regions. The Roadmap Epigenomics Project produced uniform runs of [ChromHMM](http://compbio.mit.edu/ChromHMM/) for all tissues, including the CD4+ and CD8+ T cells. BED files of these chromatin state annotations, which are derived from combinations of histone marks, are available for all tissues. Here, we download the state segmentation BED files, subset them to the enhancer class (State 7), and will use this map of enhancers as a feature set for the Goldmine annotation run.
+
+```{r,warning=FALSE,message=FALSE,error=FALSE,eval=TRUE}
+cd8_states <- fread("http://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/coreMarks/jointModel/final/E047_15_coreMarks_segments.bed")
+
+cd4_states <- fread("http://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/coreMarks/jointModel/final/E039_15_coreMarks_segments.bed")
+
+enh <- rbind(cd8_states,cd4_states)
+enh <- enh[V4=="E7",]
+setnames(enh,c("chr","start","end","state"))
+enh.gr <- reduce(makeGRanges(enh))
+features$enhancers <- enh.gr
+```
+
+### Annotation of a Custom Feature Set Using Goldmine
 When all feature sets of interest have been joined into an R list object, this object can be provided to the "features" option of goldmine() and annotation performed. In this example we also use the ENSEMBL genes.
 ```{r,warning=FALSE,message=FALSE,error=FALSE,eval=TRUE}
 gm <- goldmine(query=query,genes=getGenes("ensembl",genome=genome,cachedir)
@@ -152,18 +172,19 @@ gencon
 ```
 
 To plot using ggplot2:
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('pdf'),eval=TRUE}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('png'),eval=TRUE}
 ggplot(gencon,aes(x=call,y=fraction,fill=pattern)) + geom_bar(stat="identity",
                         position="dodge") + ggnice() + labs(title="Genomic Context of DMRs")
 ```
 
 A similar approach can be used to plot feature proportions. In this case, we first convert the fractional overlaps to TRUE/FALSE overlap calls before aggregating and plotting.
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=6,dev=c('pdf'),eval=TRUE}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=4, fig.width=7,dev=c('png'),eval=TRUE}
 featcon <- gm$context[,list(CPGisland=sum(cpgIsland_per>0)/length(chr),
                         CPGshore=sum(cpgShore_per>0)/length(chr),
                         CPGshelf=sum(cpgShelf_per>0)/length(chr),
                         TFBS=sum(wgEncodeRegTfbsClusteredV3_per>0)/length(chr),
-                        DNaseI=sum(wgEncodeRegDnaseClusteredV3_per>0)/length(chr)),
+                        DNaseI=sum(wgEncodeRegDnaseClusteredV3_per>0)/length(chr),
+                        Enhancers=sum(enhancers_per>0)/length(chr)),
                         by=c("pattern")]
 featcon <- melt(featcon,id.vars=c("pattern"))
 setnames(featcon,c("variable","value"),c("call","percent"))
@@ -196,7 +217,7 @@ head(agg)
 ```
 
 This table can be used to plot a stack of proportions using ggplot2. We first sort by the promoter fraction.
-```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=6, fig.width=5,dev=c('pdf'),eval=TRUE}
+```{r,results='hide',warning=FALSE,message=FALSE,error=FALSE,fig.height=6, fig.width=5,dev=c('png'),eval=TRUE}
 levs <- agg[call=="promoter",][order(frac,decreasing=T),]$name
 agg$name <- factor(agg$name,levels=levs)
 agg <- agg[order(agg$name),]

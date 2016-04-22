@@ -56,7 +56,7 @@ img {
 <div id="header">
 <h1 class="title">Goldmine: Integrating information to place sets of genomic ranges into biological contexts</h1>
 <h4 class="author"><em>Jeff Bhasin</em></h4>
-<h4 class="date"><em>2016-01-24</em></h4>
+<h4 class="date"><em>2016-04-22</em></h4>
 </div>
 
 <div id="TOC">
@@ -67,7 +67,11 @@ img {
 <li><a href="#example-1-annotation-of-any-set-of-genomic-ranges">Example 1: Annotation of Any Set of Genomic Ranges</a><ul>
 <li><a href="#loading-genomic-ranges">Loading Genomic Ranges</a></li>
 <li><a href="#annotation-of-genomic-ranges">Annotation of Genomic Ranges</a></li>
-<li><a href="#annotation-of-features">Annotation of Features</a></li>
+<li><a href="#annotation-of-features">Annotation of Features</a><ul>
+<li><a href="#feature-sets-available-from-the-ucsc-table-set">Feature Sets Available from the UCSC Table Set</a></li>
+<li><a href="#loading-of-external-feature-databases">Loading of External Feature Databases</a></li>
+<li><a href="#annotation-of-a-custom-feature-set-using-goldmine">Annotation of a Custom Feature Set Using Goldmine</a></li>
+</ul></li>
 <li><a href="#summary-plots-of-gene-model-and-feature-context-proportions">Summary Plots of Gene Model and Feature Context Proportions</a></li>
 </ul></li>
 <li><a href="#example-2-meta-analysis-of-many-range-sets">Example 2: Meta-Analysis of Many Range Sets</a></li>
@@ -177,19 +181,21 @@ gm &lt;-<span class="st"> </span><span class="kw">goldmine</span>(<span class="d
 </div>
 <div id="annotation-of-features" class="section level2">
 <h2>Annotation of Features</h2>
+<div id="feature-sets-available-from-the-ucsc-table-set" class="section level3">
+<h3>Feature Sets Available from the UCSC Table Set</h3>
 <p>In addition to gene models, Goldmine can report annotation and overlap with any feature set available from UCSC. Please see the <a href="http://genome.ucsc.edu/cgi-bin/hgTables">UCSC Table Browser</a> to browse all tables by category for a given genome. The “describe table schema” button can provide useful descriptions of the tables.</p>
 <p>For this example, we will annotate with features of common interest to many epigenome-wide experiments: ENCODE ChIP-seq peaks, ENCODE DNaseI hypersensitive sits, and CpG islands/shores/shelves. The ENCODE datasets can be obtained using the getFeatures() function and the special function getCpgFeatures() can automatically generate CpG island/shore/shelve features for any genome with a “CpgIslandsExt” table available. If you have your own feature sets, they can also be included. Make sure they include the columns “chr”, “start”, and “end”.</p>
 <pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">getFeatures</span>(<span class="dt">tables=</span><span class="kw">c</span>(<span class="st">&quot;wgEncodeRegDnaseClusteredV3&quot;</span>,
                         <span class="st">&quot;wgEncodeRegTfbsClusteredV3&quot;</span>),
                         <span class="dt">genome=</span>genome, <span class="dt">cachedir=</span>cachedir)</code></pre>
 <pre><code>## 
-Read 76.6% of 1867665 rows
+Read 77.6% of 1867665 rows
 Read 1867665 rows and 9 (of 9) columns from 0.212 GB file in 00:00:03
 ## 
 Read 0.0% of 4380444 rows
-Read 37.0% of 4380444 rows
-Read 74.0% of 4380444 rows
-Read 4380444 rows and 9 (of 9) columns from 0.257 GB file in 00:00:07</code></pre>
+Read 39.0% of 4380444 rows
+Read 78.1% of 4380444 rows
+Read 4380444 rows and 9 (of 9) columns from 0.257 GB file in 00:00:06</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r">features &lt;-<span class="st"> </span><span class="kw">c</span>(features,<span class="kw">getCpgFeatures</span>(<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir))</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(features)</code></pre>
 <pre><code>##                             Length  Class   Mode
@@ -198,6 +204,23 @@ Read 4380444 rows and 9 (of 9) columns from 0.257 GB file in 00:00:07</code></pr
 ## cpgIsland                     28691 GRanges S4  
 ## cpgShore                      51914 GRanges S4  
 ## cpgShelf                      43752 GRanges S4</code></pre>
+</div>
+<div id="loading-of-external-feature-databases" class="section level3">
+<h3>Loading of External Feature Databases</h3>
+<p>Goldmine is in no way limited to using data from the UCSC tables. Any set of reference genomic ranges from any source can be loaded, for example, from BED files. Here we show an example of loading data from the <a href="http://egg2.wustl.edu/roadmap/web_portal/index.html">Roadmap Epigenomics Project</a>.</p>
+<p>In this example, we are interested in how DMRs may overlap and interact with known regulatory regions. The Roadmap Epigenomics Project produced uniform runs of <a href="http://compbio.mit.edu/ChromHMM/">ChromHMM</a> for all tissues, including the CD4+ and CD8+ T cells. BED files of these chromatin state annotations, which are derived from combinations of histone marks, are available for all tissues. Here, we download the state segmentation BED files, subset them to the enhancer class (State 7), and will use this map of enhancers as a feature set for the Goldmine annotation run.</p>
+<pre class="sourceCode r"><code class="sourceCode r">cd8_states &lt;-<span class="st"> </span><span class="kw">fread</span>(<span class="st">&quot;http://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/coreMarks/jointModel/final/E047_15_coreMarks_segments.bed&quot;</span>)
+
+cd4_states &lt;-<span class="st"> </span><span class="kw">fread</span>(<span class="st">&quot;http://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/coreMarks/jointModel/final/E039_15_coreMarks_segments.bed&quot;</span>)
+
+enh &lt;-<span class="st"> </span><span class="kw">rbind</span>(cd8_states,cd4_states)
+enh &lt;-<span class="st"> </span>enh[V4==<span class="st">&quot;E7&quot;</span>,]
+<span class="kw">setnames</span>(enh,<span class="kw">c</span>(<span class="st">&quot;chr&quot;</span>,<span class="st">&quot;start&quot;</span>,<span class="st">&quot;end&quot;</span>,<span class="st">&quot;state&quot;</span>))
+enh.gr &lt;-<span class="st"> </span><span class="kw">reduce</span>(<span class="kw">makeGRanges</span>(enh))
+features$enhancers &lt;-<span class="st"> </span>enh.gr</code></pre>
+</div>
+<div id="annotation-of-a-custom-feature-set-using-goldmine" class="section level3">
+<h3>Annotation of a Custom Feature Set Using Goldmine</h3>
 <p>When all feature sets of interest have been joined into an R list object, this object can be provided to the “features” option of goldmine() and annotation performed. In this example we also use the ENSEMBL genes.</p>
 <pre class="sourceCode r"><code class="sourceCode r">gm &lt;-<span class="st"> </span><span class="kw">goldmine</span>(<span class="dt">query=</span>query,<span class="dt">genes=</span><span class="kw">getGenes</span>(<span class="st">&quot;ensembl&quot;</span>,<span class="dt">genome=</span>genome,cachedir)
                         ,<span class="dt">features=</span>features,<span class="dt">genome=</span>genome,<span class="dt">cachedir=</span>cachedir)</code></pre>
@@ -219,14 +242,16 @@ Read 204940 rows and 16 (of 16) columns from 0.043 GB file in 00:00:03</code></p
 ## [21] &quot;nearest_genes&quot;                   &quot;distance_to_nearest_gene&quot;       
 ## [23] &quot;wgEncodeRegDnaseClusteredV3_per&quot; &quot;wgEncodeRegTfbsClusteredV3_per&quot; 
 ## [25] &quot;cpgIsland_per&quot;                   &quot;cpgShore_per&quot;                   
-## [27] &quot;cpgShelf_per&quot;                    &quot;url&quot;</code></pre>
+## [27] &quot;cpgShelf_per&quot;                    &quot;enhancers_per&quot;                  
+## [29] &quot;url&quot;</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(gm$features)</code></pre>
 <pre><code>##                             Length Class      Mode
 ## wgEncodeRegDnaseClusteredV3 20     data.table list
 ## wgEncodeRegTfbsClusteredV3  20     data.table list
 ## cpgIsland                   22     data.table list
 ## cpgShore                    15     data.table list
-## cpgShelf                    15     data.table list</code></pre>
+## cpgShelf                    15     data.table list
+## enhancers                   15     data.table list</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colnames</span>(gm$features$wgEncodeRegTfbsClusteredV3)</code></pre>
 <pre><code>##  [1] &quot;query.chr&quot;                          
 ##  [2] &quot;query.start&quot;                        
@@ -251,6 +276,7 @@ Read 204940 rows and 16 (of 16) columns from 0.043 GB file in 00:00:03</code></p
 <p>The gmWrite() function simplifies saving all tables in an output list from goldmine() as CSV files for viewing in a spreadsheet or processing outside of R.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">gmWrite</span>(gm, <span class="dt">path=</span><span class="st">&quot;gm_csv&quot;</span>)</code></pre>
 </div>
+</div>
 <div id="summary-plots-of-gene-model-and-feature-context-proportions" class="section level2">
 <h2>Summary Plots of Gene Model and Feature Context Proportions</h2>
 <p>A simple way to summarize Goldmine’s annotation results is to plot the proportion of query genomic ranges assigned to each gene model context. This can be accomplished by aggregating Goldmine’s “context” output using data.table and plotting a bar graph using ggplot2.</p>
@@ -274,20 +300,21 @@ gencon</code></pre>
 <p>To plot using ggplot2:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(gencon,<span class="kw">aes</span>(<span class="dt">x=</span>call,<span class="dt">y=</span>fraction,<span class="dt">fill=</span>pattern)) +<span class="st"> </span><span class="kw">geom_bar</span>(<span class="dt">stat=</span><span class="st">&quot;identity&quot;</span>,
                         <span class="dt">position=</span><span class="st">&quot;dodge&quot;</span>) +<span class="st"> </span><span class="kw">ggnice</span>() +<span class="st"> </span><span class="kw">labs</span>(<span class="dt">title=</span><span class="st">&quot;Genomic Context of DMRs&quot;</span>)</code></pre>
-<p><img src="goldmine_files/figure-html/unnamed-chunk-19-1.png" title="" alt="" width="576" /></p>
+<p><img src="goldmine_files/figure-html/unnamed-chunk-20-1.png" title="" alt="" width="576" /></p>
 <p>A similar approach can be used to plot feature proportions. In this case, we first convert the fractional overlaps to TRUE/FALSE overlap calls before aggregating and plotting.</p>
 <pre class="sourceCode r"><code class="sourceCode r">featcon &lt;-<span class="st"> </span>gm$context[,<span class="kw">list</span>(<span class="dt">CPGisland=</span><span class="kw">sum</span>(cpgIsland_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr),
                         <span class="dt">CPGshore=</span><span class="kw">sum</span>(cpgShore_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr),
                         <span class="dt">CPGshelf=</span><span class="kw">sum</span>(cpgShelf_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr),
                         <span class="dt">TFBS=</span><span class="kw">sum</span>(wgEncodeRegTfbsClusteredV3_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr),
-                        <span class="dt">DNaseI=</span><span class="kw">sum</span>(wgEncodeRegDnaseClusteredV3_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr)),
+                        <span class="dt">DNaseI=</span><span class="kw">sum</span>(wgEncodeRegDnaseClusteredV3_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr),
+                        <span class="dt">Enhancers=</span><span class="kw">sum</span>(enhancers_per&gt;<span class="dv">0</span>)/<span class="kw">length</span>(chr)),
                         by=<span class="kw">c</span>(<span class="st">&quot;pattern&quot;</span>)]
 featcon &lt;-<span class="st"> </span><span class="kw">melt</span>(featcon,<span class="dt">id.vars=</span><span class="kw">c</span>(<span class="st">&quot;pattern&quot;</span>))
 <span class="kw">setnames</span>(featcon,<span class="kw">c</span>(<span class="st">&quot;variable&quot;</span>,<span class="st">&quot;value&quot;</span>),<span class="kw">c</span>(<span class="st">&quot;call&quot;</span>,<span class="st">&quot;percent&quot;</span>))
 featcon
 <span class="kw">ggplot</span>(featcon,<span class="kw">aes</span>(<span class="dt">x=</span>call,<span class="dt">y=</span>percent,<span class="dt">fill=</span>pattern)) +<span class="st"> </span><span class="kw">geom_bar</span>(<span class="dt">stat=</span><span class="st">&quot;identity&quot;</span>,
                         <span class="dt">position=</span><span class="st">&quot;dodge&quot;</span>) +<span class="st"> </span><span class="kw">ggnice</span>() +<span class="st"> </span><span class="kw">labs</span>(<span class="dt">title=</span><span class="st">&quot;Feature Context of DMRs&quot;</span>)</code></pre>
-<p><img src="goldmine_files/figure-html/unnamed-chunk-20-1.png" title="" alt="" width="576" /></p>
+<p><img src="goldmine_files/figure-html/unnamed-chunk-21-1.png" title="" alt="" width="672" /></p>
 </div>
 </div>
 <div id="example-2-meta-analysis-of-many-range-sets" class="section level1">
@@ -324,7 +351,7 @@ agg &lt;-<span class="st"> </span>agg[<span class="kw">order</span>(agg$call),]
                   <span class="dt">axis.text.y=</span><span class="kw">element_blank</span>()) +<span class="st"> </span><span class="kw">scale_fill_manual</span>(<span class="dt">values=</span>
                   <span class="kw">c</span>(<span class="st">&quot;promoter&quot;</span>=<span class="st">&quot;#e41a1c&quot;</span>,<span class="st">&quot;exon&quot;</span>=<span class="st">&quot;#4daf4a&quot;</span>,<span class="st">&quot;intron&quot;</span>=<span class="st">&quot;#377eb8&quot;</span>,
                   <span class="st">&quot;3&#39; end&quot;</span>=<span class="st">&quot;#ff7f00&quot;</span>,<span class="st">&quot;intergenic&quot;</span>=<span class="st">&quot;#984ea3&quot;</span>)) +<span class="st"> </span><span class="kw">theme</span>(<span class="dt">legend.position=</span><span class="st">&quot;bottom&quot;</span>)</code></pre>
-<p><img src="goldmine_files/figure-html/unnamed-chunk-24-1.png" title="" alt="" width="480" /></p>
+<p><img src="goldmine_files/figure-html/unnamed-chunk-25-1.png" title="" alt="" width="480" /></p>
 <p>On this plot, each row represents a factor from the ENCODE ChIP-seq supertrack. Each row is a bar graph, filled proportionally to the fraction of binding sites for each factor that fall in each genomic context. Row labels have been omitted given the size of the dataset. A spectrum of context biases is visible ranging from nearly entirely promoter-bound to those that are nearly all non-promoter binding.</p>
 </div>
 <div id="appendix" class="section level1">
