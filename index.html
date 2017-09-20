@@ -26,10 +26,15 @@ title: "JeffBio.com - Bioinformatics & Data Science"
           <div class="col-lg-4">
               <h1><a href="/articles">Latest Articles</a></h1>
               <p class="lead">Read my blogs about the latest research and events in bioinformatics, data science, computational biology, and precision medicine</p>
-		<ul>
-			<li>Article 1</li>
-			<li>Article 2</li>
-		</ul>
+
+<ul> 
+{% for post in site.posts %}
+    <li>
+      <h4><a href="{{ post.url }}">{{ post.title }}</a> <small>{{ post.date | date: "%B %e, %Y" }}</small></h4>
+    </li>
+  {% endfor %}
+</ul>
+
           </div>
 
         </div>
