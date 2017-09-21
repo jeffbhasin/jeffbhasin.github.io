@@ -16,3 +16,50 @@
     vertical-align:middle;
     float:none;
 }
+
+/* Added to prevent nav from overlapping content */
+#page-content {
+  padding-top: 30px;
+}
+
+.page-header {
+	margin: 0px 0 21px;
+}
+
+/* Because I'm using h1 for page header, don't put margin on top, since we've given the content div a margin from nav already */
+h1 {
+	margin: 0 0;
+}
+
+/* Automatically center any img-responsive */
+.img-responsive {
+    margin: 0 auto;
+}
+
+/* Styles for image caption-on-hover */
+.thumbnail {
+    position:relative;
+    overflow:hidden;
+}
+ 
+.caption {
+    position:absolute;
+    top:0;
+    right:0;
+    background:rgba(90, 90, 90, 0.75);
+    width:100%;
+    height:100%;
+    padding:2%;
+    display: none;
+    text-align: left;
+    color:#fff !important;
+    z-index:2;
+}
+
+.caption-header {
+    color: #FFF;
+}
+
+.caption-cell {
+    padding: 5px;
+}
