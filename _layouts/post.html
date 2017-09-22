@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  {% include head.html %}
+
+  <body>
+
+    {% include header.html %}
+    <div class="container" id="page-content">
+
+	<div class="blog">
+
+	{% include blognext.html %}
+
+	<h2>{{ page.title }}</h2>
+	<h4>Posted by Jeffrey M. Bhasin, PhD on {{ page.date | date: '%B %d, %Y' }}</h4>
+	<hr>
+
+    {{ content }}
+<hr>
+
+	{% include blognext.html %}
+
+
+    {% include footer.html %}
+    </div>
+
+  </body>
+
+</html>

@@ -1,10 +1,10 @@
 # Site settings
-title: "Epigenomics Tools by Jeff Bhasin, et al."
-email: jeffb@case.edu
+title: "JeffBio.com"
+email: contact@jeffbio.com
 description: > # this means to ignore newlines until "baseurl:"
-  R Packages by Bhasin, et al. for Detecting and Interpreting Epigenomic Changes Relevant to Disease and Development
+ Welcome! I am Jeffrey Bhasin, a scientist who employs molecular medicine, bioinformatics, and data science towards the improvement of human health
 baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://jeffbhasin.github.io" # the base hostname & protocol for your site
+url: "http://jeffbio.com" # the base hostname & protocol for your site
 github_username:  jeffbhasin
 
 # Build settings

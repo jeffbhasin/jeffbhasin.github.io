@@ -1,31 +1,88 @@
 ---
 layout: default
-title: "JeffBio.com - Bioinformatics & Data Science"
+title: "Website of Jeffrey M. Bhasin, PhD"
 ---
 
-      <div class="page-header" id="banner">
-        <div class="row">
-            <h1>Jeffrey M. Bhasin, PhD</h1>
-	    <h3>Bioinformatics & Computational Biology</h3>
-          <div class="col-lg-8 col-md-7 col-sm-6">
-	    <blockquote>I firmly believe the informed analysis of large data sets in biology will carry the most impact on human health in the next decades.</blockquote>
-          </div>
-          <div class="col-lg-4 col-md-5 col-sm-6">
-        <div><a href="/mission" class="btn btn-default">Learn About My Mission</a></div>
-          </div>
-        </div>
-      </div>
+<div class="row">
+	<div class="col-xs-12">
+		<h3>Welcome! I am Jeffrey Bhasin, a scientist who employs molecular medicine, bioinformatics, and data science towards the improvement of human health</h3>
+	</div>
+	<div class="col-sm-4 pull-right">
+		<a href="/mission" class="btn btn-default">Learn More About My Mission</a>
+	</div>
+</div>
+<br>
 
-        <div class="row">
-          <div class="col-lg-4">
-              <h1><a href="/epigenomics-tools">Epigenomics Software</a></h1>
-              <p class="lead">R packages by Bhasin, et al. for discovering functionally-relevant epigenomic changes in biological conditions including disease and development</p>
-              <a href="/epigenomics-tools"><img src="/assets/img/et.jpg" height="200"></a>
+
+
+<div class="row">
+	<div class="col-xs-3 caption-cell">
+		<div class="thumbnail">
+			<a href="/research" class="">
+				<div class="caption">
+				     <h4 class="caption-header">DNA Methylation in Aggressive Prostate Cancer</h4>
+				     <p>Click to learn more about this research</p>
+				</div>
+				<img src="assets/img/home-tile-heatmap.png" class="img-responsive img-rounded">
+			</a>
+		</div>
+	</div>
+
+	<div class="col-xs-3 caption-cell">
+		<div class="thumbnail">
+			<a href="/methylaction" class="">
+				<div class="caption">
+				     <h4 class="caption-header">Software to Map DNA Methylation Aberrations</h4>
+				     <p>Click to learn about MethylAction</p>
+				</div>
+				<img src="assets/img/home-tile-dmr.png" class="img-responsive img-rounded">
+			</a>
+		</div>
+	</div>
+
+	<div class="col-xs-3 caption-cell">
+		<div class="thumbnail">
+			<a href="/research" class="">
+				<div class="caption">
+				     <h4 class="caption-header">Network Analysis of DNA Methylation in Fibrosis</h4>
+				     <p>Click to learn more about this study</p>
+				</div>
+				<img src="assets/img/home-tile-fibrosis.png" class="img-responsive img-rounded">
+			</a>
+		</div>
+	</div>
+
+	<div class="col-xs-3 caption-cell">
+		<div class="thumbnail">
+			<a href="/goldmine" class="">
+				<div class="caption">
+				     <h4 class="caption-header">Software to Map Genomic Context</h4>
+				     <p>Click to learn more about Goldmine</p>
+				</div>
+				<img src="assets/img/home-tile-chip.png" class="img-responsive img-rounded">
+			</a>
+		</div>
+	</div>
+
+	<!--
+	<div class="col-sm-3">
+	col-md-3
+	</div>
+	-->
+
+</div>
+
+
+   <div class="row">
+          <div class="col-sm-4">
+              <h3><a href="/epigenomics-tools">Epigenomics Software</a></h3>
+              <p>R packages by Bhasin, et al. for discovering functionally-relevant epigenomic changes in biological conditions including disease and development</p>
+              <a href="/epigenomics-tools"><img src="/assets/img/et.jpg" height="200" class="img-responsive"></a>
 
           </div>
-          <div class="col-lg-4">
-              <h1><a href="/articles">Latest Articles</a></h1>
-              <p class="lead">Read my blogs about the latest research and events in bioinformatics, data science, computational biology, and precision medicine</p>
+          <div class="col-sm-4">
+              <h3><a href="/articles">Latest Blogs</a></h3>
+              <p>Read my blogs about the latest research and events in bioinformatics, data science, computational biology, and precision medicine</p>
 
 <ul> 
 {% for post in site.posts %}
@@ -36,6 +93,19 @@ title: "JeffBio.com - Bioinformatics & Data Science"
 </ul>
 
           </div>
+
+  <div class="col-sm-4">
+              <h3><a href="/research">Bioinformatics Research</a></h3>
+              <p>Read my peer reviewed scientific publications and summaries</p>
+
+<ul class="nav nav-pills nav-stacked">
+  <li role="presentation"><a href="/research">DNA Methylation in Aggressive Cancer</a></li>
+  <li role="presentation"><a href="/research">Gene Networks in Fibrosis</a></li>
+  <li role="presentation"><a href="/research">Genetics of Cardiovascular Diseases</a></li>
+  <li role="presentation"><a href="/epigenomics-tools">Published Software Tools</a></li>
+</ul>
+          </div>
+
 
         </div>
 

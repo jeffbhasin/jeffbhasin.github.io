@@ -1,0 +1,28 @@
+---
+layout: default
+title: "Blog"
+---
+<h1>Blog</h1>
+<br>
+<p>I write blog posts to provide updates about my software, research, events I attend, talks I give, and to highlight important work in the fields of molecular medicine, bioinformatics, and data science.</p>
+<br>
+<div class="row">
+
+  {% for post in site.posts %}
+    <div class="col-sm-6">
+
+<div class="row postrow">
+
+{% if post.leadimg %}<div class="col-xs-4"><a href="{{ post.url }}"><img width=150 height=150 src="{{ post.leadimg }}" class="img-responsive img-rounded"></a></div>{% endif %}
+
+<div class="col-xs-8">
+      <h4><a href="{{ post.url }}">{{ post.title }}</a><br><small>{{ post.date | date: "%B %e, %Y" }}</small></h4><em>{{ post.excerpt }}</em>&nbsp;<a href="{{ post.url }}">(more...)</a></p>
+</div>
+
+
+</div>
+
+    </div>
+  {% endfor %}
+
+</div>
