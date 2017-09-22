@@ -17,6 +17,11 @@
     float:none;
 }
 
+/* Line up image with top of HX tags */
+.lineup {
+	padding-top: 65px;
+}
+
 /* Added to prevent nav from overlapping content */
 #page-content {
   padding-top: 30px;
